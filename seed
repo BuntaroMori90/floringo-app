@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Seed template Islanda</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body{ font-family:sans-serif; background:#0a0e14; color:#d7e6e8; padding:40px; max-width:600px; margin:0 auto; }
+  button{ padding:12px 20px; background:#3ddc97; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:15px; }
+  #log{ margin-top:20px; font-family:monospace; font-size:13px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Seed: template "Islanda 8 giorni"</h1>
+<p>Questa pagina va usata una sola volta per caricare l'itinerario Islanda come template clonabile nella pagina "crea-viaggio.html". Dopo l'uso puoi cancellarla dal repository.</p>
+<button onclick="seed()">Crea template</button>
+<div id="log"></div>
+
+<script>
+  const sb = window.supabase.createClient(
+    'https://zjwntpjpigmmnymeekxf.supabase.co',
+    'sb_publishable_iHEy1TCsqZRqo3xMH_B7OA_Px9KPN2T'
+  );
+
+  const giorni = [
+    { num:1, titolo:"L'Inizio", sub:"Reykjavik e il primo impatto", luogo:"Reykjavik, Iceland", lat:64.1466, lon:-21.9426,
+      storia:"Arrivo a Keflavik, ritiro auto e partenza verso la capitale, tra campi di lava e atmosfera surreale. Rainbow Street per il primo caffè islandese, poi pomeriggio libero fino al Faro di Grotta.",
+      schedule:[["Mattina","Arrivo a Reykjavik","Ritiro auto, check-in, centro storico"],["Pomeriggio","Visita culturale","Harpa Concert Hall, Solfar, Museo Perlan"],["Sera","Libera","Faro di Grotta, cena tipica"]],
+      must:[], bonus:[], sac:[], meta:{guida:"—",benzina:"—",cibo:"centro Reykjavik"}, trigger:null, maps:null },
+    { num:2, titolo:"Il Cuore dell'Islanda", sub:"Golden Circle", luogo:"Hvolsvollur, Iceland", lat:63.7517, lon:-20.2233,
+      storia:"La vera partenza: si entra nel Circolo d'Oro tra parchi, crateri, laghi vulcanici e cascate.",
+      schedule:[["8:30","Partenza da Reykjavik",""],["9:15","Thingvellir National Park","Sosta 1h30"],["11:00","Bruarfoss","Cascata blu"],["12:00","Geysir","Strokkur"],["12:50","Gullfoss + pranzo","La regina delle cascate"],["14:30","Faxi Waterfall",""],["15:20","Cratere Kerid",""],["16:30","Urridafoss",""],["18:00","Hvolsvollur","Pernottamento"]],
+      must:["Thingvellir","Geysir","Gullfoss","Kerid"], bonus:["Bruarfoss"], sac:["Faxi","Urridafoss"],
+      meta:{guida:"3h 45min",benzina:"facile ovunque",cibo:"ristoranti o pranzo a sacco"},
+      trigger:"Meteo brutto: ridurre tempo a Thingvellir. <b>Piano B:</b> saltare Faxi e Urridafoss.", maps:"https://maps.app.goo.gl/vTgis569Q9BGyruV7" },
+    { num:3, titolo:"Il Sud Selvaggio", sub:"Cascate, spiagge nere e scenari iconici", luogo:"Vik, Iceland", lat:63.4166, lon:-19.0060,
+      storia:"Giornata intensa: cascate nascoste e potenti fino alla spiaggia nera e alla chiesa rossa di Vik.",
+      schedule:[["8:30","Partenza da Hvolsvollur",""],["8:50","Seljalandsfoss","Passaggio dietro la cascata"],["9:35","Gljufrabui","Cascata nella grotta"],["10:25","Skogafoss","500 gradini"],["11:15","Kvernufoss","Gemma nascosta"],["12:05","Solheimasandur","Relitto aereo"],["13:30","Dyrholaey","Promontorio"],["16:10","Reynisfjara Beach","Spiaggia nera"],["17:10","Vik","Pernottamento"]],
+      must:["Seljalandsfoss","Skogafoss","Reynisfjara","Vik"], bonus:["Kvernufoss","Dyrholaey"], sac:["Solheimasandur"],
+      meta:{guida:"2h 20min",benzina:"Hvolsvollur o Vik",cibo:"Vik o pranzo a sacco"},
+      trigger:"Ritardo: saltare il relitto aereo. Onde alte: evitare Reynisfjara/Dyrholaey con vento forte.", maps:"https://maps.app.goo.gl/7ENV76P8A84TTQYw9" },
+    { num:4, titolo:"Dentro il Ghiaccio", sub:"Ghiacciai, ice cave e paesaggi surreali", luogo:"Hofn, Iceland", lat:64.2539, lon:-15.2082,
+      storia:"Si continua verso il grande ghiacciaio, da vivere dall'interno.",
+      schedule:[["8:30","Partenza da Vik",""],["8:50","Fjadrargljufur","Canyon panoramico"],["11:50","Skaftafell","Punto di incontro tour"],["12:30","Vatnajokull","Tour Ice Cave"],["15:45","Diamond Beach",""],["17:45","Stokksness","Villaggio vichingo"],["19:00","Hofn","Pernottamento"]],
+      must:["Ice Cave","Diamond Beach"], bonus:["Fjadrargljufur","Skaftafell"], sac:["Stokksness"],
+      meta:{guida:"3h 40min",benzina:"Kirkjubaerklaustur",cibo:"limitato, scorta"},
+      trigger:"Meteo brutto: saltare il canyon. <b>Piano B:</b> priorità Ice Cave.", maps:"https://maps.app.goo.gl/WrnNinqc7e4SjQSF8" },
+    { num:5, titolo:"La Grande Traversata", sub:"I fiordi dell'est", luogo:"Akureyri, Iceland", lat:65.6835, lon:-18.0878,
+      storia:"Guida intensa e obbligatoria per coprire le lunghe distanze.",
+      schedule:[["8:30","Partenza da Hofn",""],["11:30","Egilsstadir","Guida 3h25"],["12:30","Seydisfjordur","Villaggio sul fiordo"],["16:20","Godafoss","Cascata degli Dei"],["17:45","Akureyri","Pernottamento"]],
+      must:["Godafoss"], bonus:["Egilsstadir"], sac:["Seydisfjordur"],
+      meta:{guida:"7h 30min",benzina:"Egilsstadir appena possibile",cibo:"Egilsstadir o scorta"},
+      trigger:"Vento forte: attenzione alla guida.", maps:"https://maps.app.goo.gl/3vZNPTzLnyxGcdEo7" },
+    { num:6, titolo:"Natura Viva", sub:"Balene, terra fumante e bagni termali", luogo:"Akureyri, Iceland", lat:65.6835, lon:-18.0878,
+      storia:"Un giorno pieno di emozioni: balene, territorio fumante, bagni termali.",
+      schedule:[["7:30","Partenza da Akureyri",""],["8:30","Husavik","Whale Watching"],["14:15","Dettifoss",""],["16:00","Hverir","Fumarole"],["16:20","Dimmuborgir","Formazioni laviche"],["17:40","Myvatn Nature Baths","Bagno termale serale"]],
+      must:["Whale Watching","Myvatn Nature Baths"], bonus:["Hverir","Dimmuborgir"], sac:["Dettifoss"],
+      meta:{guida:"4h 30min",benzina:"Egilsstadir",cibo:"Myvatn o scorta"},
+      trigger:"Meteo brutto: saltare Dettifoss.", maps:"https://maps.app.goo.gl/9C4gBaDs6hTgvSzZ8" },
+    { num:7, titolo:"Il Grande Ritorno", sub:"Nord remoto e rientro verso ovest", luogo:"Grundarfjordur, Iceland", lat:64.9259, lon:-23.2528,
+      storia:"Seconda giornata di guida lunga, imprescindibile per rientrare in tempo verso Reykjavik.",
+      schedule:[["8:00","Partenza da Akureyri",""],["9:15","Siglufjordur","Villaggio delle aringhe"],["11:15","Grafarkirkja","Chiesa di torba"],["13:40","Hvammastangi","Rifornimento e pranzo"],["17:20","Stykkisholmur",""],["19:00","Grundarfjordur","Pernottamento"]],
+      must:["Arrivare a Grundarfjordur"], bonus:["Grafarkirkja","Hvammastangi"], sac:["Siglufjordur"],
+      meta:{guida:"6h 30min",benzina:"Akureyri",cibo:"pranzo a sacco"},
+      trigger:"Meteo brutto: saltare Siglufjordur.", maps:"https://maps.app.goo.gl/hTXeGS9Z1Wwnmqps6" },
+    { num:8, titolo:"L'Ultimo Sguardo", sub:"Snæfellsnes e relax finale", luogo:"Grindavik, Iceland", lat:63.8424, lon:-22.4338,
+      storia:"Ultimo giorno di viaggio. Grindavik è un'ottima sosta pre-partenza per la vicinanza a Keflavik.",
+      schedule:[["8:00","Partenza da Grundarfjordur",""],["8:05","Monte Kirkjufell",""],["10:00","Raudfeldsgja","Canyon"],["11:10","Arnarstapi",""],["12:50","Budakirkja","Chiesa nera"],["13:45","Ytri Tunga","Foche"],["20:00","Bagno termale finale",""]],
+      must:["Kirkjufell","Arnastapi","Budakirkja"], bonus:["Ytri Tunga"], sac:[],
+      meta:{guida:"4h",benzina:"pieno finale",cibo:"pranzo a sacco o aeroporto"},
+      trigger:"Timing: arrivare 3h prima in aeroporto per volo e riconsegna auto.", maps:"https://maps.app.goo.gl/Jqm2EA8jvJt75ouY8" }
+  ];
+
+  async function seed(){
+    const log = document.getElementById('log');
+    log.textContent = 'Creo il viaggio-template...\n';
+
+    const { data: existing } = await sb.from('app_trips').select('id').eq('slug', 'islanda-esempio').maybeSingle();
+    if(existing){
+      log.textContent += 'Template già esistente (slug "islanda-esempio"). Elimino e ricreo...\n';
+      await sb.from('app_trips').delete().eq('id', existing.id);
+    }
+
+    const { data: trip, error } = await sb.from('app_trips').insert({
+      slug: 'islanda-esempio', nome: 'Islanda 8 giorni (esempio)', editor_password: 'template', is_template: true
+    }).select().single();
+
+    if(error){ log.textContent += 'Errore: ' + error.message; return; }
+
+    for(const g of giorni){
+      const { data: day } = await sb.from('app_days').insert({
+        trip_id: trip.id, numero: g.num, titolo: g.titolo, sottotitolo: g.sub, storia: g.storia,
+        luogo: g.luogo, lat: g.lat, lon: g.lon, percorso_maps_url: g.maps,
+        must: g.must, bonus: g.bonus, sacrificabili: g.sac,
+        meta_guida: g.meta.guida, meta_benzina: g.meta.benzina, meta_cibo: g.meta.cibo,
+        trigger_html: g.trigger
+      }).select().single();
+
+      const stops = g.schedule.map((s, idx) => ({ day_id: day.id, orario: s[0], nome_tappa: s[1], note: s[2], ordine: idx }));
+      await sb.from('app_stops').insert(stops);
+      log.textContent += 'Giorno ' + g.num + ' creato con ' + stops.length + ' tappe.\n';
+    }
+
+    log.textContent += '\nFatto! Il template "Islanda 8 giorni (esempio)" è ora selezionabile in crea-viaggio.html.';
+  }
+</script>
+</body>
+</html>

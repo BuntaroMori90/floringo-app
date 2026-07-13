@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor viaggio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --night:#0d0d0d; --night-2:#161616; --ice:#ffffff; --ice-dim:rgba(255,255,255,0.6);
+    --accent-1:#f5711a; --accent-2:#ff9a4d; --line:rgba(255,255,255,0.12); --ember:#e8544f;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--night); color:var(--ice); font-family:'Space Grotesk',sans-serif; min-height:100vh; }
+  header.brand{ display:flex; align-items:center; gap:10px; padding:18px 28px; }
+  header.brand img{ height:30px; width:30px; border-radius:50%; }
+  header.brand .logo-text{ font-weight:700; font-size:16px; }
+  header.brand .logo-text b{ color:var(--accent-1); font-weight:700; }
+  .hidden{ display:none !important; }
+  #gate{ min-height:calc(100vh - 70px); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card{ width:100%; max-width:420px; background:var(--night-2); border:1px solid var(--line); border-radius:18px; padding:32px 28px; }
+  h1{ font-size:22px; margin-bottom:6px; }
+  .sub{ color:var(--ice-dim); font-size:13px; margin-bottom:22px; }
+  input, select, textarea{ width:100%; background:var(--night); border:1px solid var(--line); border-radius:8px; padding:11px 13px; color:var(--ice); font-family:'Space Grotesk',sans-serif; font-size:14px; outline:none; margin-bottom:10px; }
+  input:focus, select:focus, textarea:focus{ border-color:var(--accent-2); }
+  button{ padding:11px 18px; border:none; border-radius:8px; background:linear-gradient(90deg,var(--accent-1),var(--accent-2)); color:var(--night); font-weight:700; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:14px; }
+  button.secondary{ background:none; border:1px solid var(--line); color:var(--ice); font-weight:500; }
+  button.danger{ background:none; border:1px solid var(--ember); color:var(--ember); font-weight:500; padding:6px 10px; font-size:12px; }
+  .msg{ font-size:13px; margin-top:10px; font-family:'JetBrains Mono',monospace; }
+  .msg.err{ color:var(--ember); }
+
+  #app{ max-width:760px; margin:0 auto; padding:28px 20px 80px; }
+  .top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent-2); }
+  .public-link{ font-size:12px; color:var(--ice-dim); word-break:break-all; margin-bottom:24px; }
+  .public-link a{ color:var(--accent-1); text-decoration:none; }
+  .section-title{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.35); margin:30px 0 12px; display:flex; align-items:center; gap:8px; }
+  .section-title::after{ content:""; flex:1; height:1px; background:var(--line); }
+  .panel{ background:var(--night-2); border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .chip{ background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:100px; padding:6px 12px; font-size:13px; display:flex; align-items:center; gap:8px; }
+  .chip button{ background:none; border:none; color:var(--ice-dim); padding:0; font-size:13px; cursor:pointer; }
+  .inline-form{ display:flex; gap:8px; }
+  .inline-form input{ margin-bottom:0; flex:1; }
+
+  .day-card{ background:var(--night-2); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:12px; }
+  .day-card-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .day-card-head b{ font-size:15px; }
+  .stop-row{ display:flex; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .stop-row:last-child{ border-bottom:none; }
+  .stop-row .t{ font-family:'JetBrains Mono',monospace; color:var(--accent-2); width:90px; flex-shrink:0; }
+  .stop-row .n{ flex:1; }
+  .stop-form{ display:grid; grid-template-columns: 90px 1fr 1fr auto; gap:6px; margin-top:10px; }
+  .stop-form input{ margin-bottom:0; font-size:13px; padding:8px 10px; }
+  details{ margin-top:6px; }
+  summary{ cursor:pointer; font-size:12px; color:var(--ice-dim); font-family:'JetBrains Mono',monospace; }
+  .day-fields{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:10px; }
+  .day-fields textarea{ grid-column: 1 / -1; min-height:60px; resize:vertical; }
+  .day-fields input{ margin-bottom:0; }
+</style>
+</head>
+<body>
+
+<header class="brand">
+  <a href="landing.html"><img src="assets/icon-badge.png" alt="FlorinGo"></a>
+  <div class="logo-text">Florin<b>Go</b></div>
+</header>
+
+<div id="gate">
+  <div class="card">
+    <h1>Accesso editor</h1>
+    <div class="sub">Inserisci la password organizzatore per questo viaggio.</div>
+    <input type="password" id="passInput" placeholder="Password">
+    <button onclick="login()">Entra</button>
+    <div class="msg err" id="gateMsg"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="top">
+    <div class="eyebrow">Editor</div>
+  </div>
+  <h1 id="tripTitle">—</h1>
+  <div class="public-link">Link pubblico da condividere: <a id="publicLink" href="#" target="_blank"></a></div>
+
+  <div class="section-title">Partecipanti</div>
+  <div class="panel">
+    <div class="chip-row" id="participantsList"></div>
+    <div class="inline-form">
+      <input type="text" id="newParticipant" placeholder="Nome partecipante">
+      <button onclick="aggiungiPartecipante()">Aggiungi</button>
+    </div>
+  </div>
+
+  <div class="section-title">Itinerario — giorni</div>
+  <div id="daysList"></div>
+
+  <div class="panel" style="margin-top:14px;">
+    <button class="secondary" onclick="mostraFormNuovoGiorno()" style="width:100%;">+ Aggiungi giorno</button>
+    <div id="newDayForm" class="day-fields hidden" style="margin-top:14px;">
+      <input type="number" id="nd-numero" placeholder="Numero giorno (es. 1)">
+      <input type="text" id="nd-titolo" placeholder="Titolo">
+      <input type="text" id="nd-sottotitolo" placeholder="Sottotitolo">
+      <input type="text" id="nd-luogo" placeholder="Luogo pernottamento (es. Vik, Iceland)">
+      <input type="number" step="0.0001" id="nd-lat" placeholder="Latitudine (opzionale)">
+      <input type="number" step="0.0001" id="nd-lon" placeholder="Longitudine (opzionale)">
+      <textarea id="nd-storia" placeholder="Racconto/descrizione del giorno"></textarea>
+      <div style="grid-column:1/-1;"><button onclick="salvaNuovoGiorno()">Salva giorno</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const sb = window.supabase.createClient(
+    'https://zjwntpjpigmmnymeekxf.supabase.co',
+    'sb_publishable_iHEy1TCsqZRqo3xMH_B7OA_Px9KPN2T'
+  );
+
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('t');
+  let currentTrip = null;
+
+  if(!slug){
+    document.getElementById('gateMsg').textContent = 'Link non valido: manca il viaggio (?t=slug).';
+  }
+
+  async function login(){
+    const pass = document.getElementById('passInput').value;
+    const { data, error } = await sb.from('app_trips').select('*').eq('slug', slug).single();
+    if(error || !data){
+      document.getElementById('gateMsg').textContent = 'Viaggio non trovato.';
+      return;
+    }
+    if(data.editor_password !== pass){
+      document.getElementById('gateMsg').textContent = 'Password errata.';
+      return;
+    }
+    currentTrip = data;
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('tripTitle').textContent = data.nome;
+    const link = window.location.origin + window.location.pathname.replace('editor.html','viaggio.html') + '?t=' + data.slug;
+    document.getElementById('publicLink').textContent = link;
+    document.getElementById('publicLink').href = link;
+    caricaPartecipanti();
+    caricaGiorni();
+  }
+
+  document.getElementById('passInput').addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
+
+  // ---- Partecipanti ----
+  async function caricaPartecipanti(){
+    const { data } = await sb.from('app_participants').select('*').eq('trip_id', currentTrip.id).order('nome');
+    const list = document.getElementById('participantsList');
+    list.innerHTML = '';
+    (data || []).forEach(p => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = '<span>' + p.nome + '</span><button title="Rimuovi">✕</button>';
+      chip.querySelector('button').addEventListener('click', async () => {
+        if(!confirm('Rimuovere ' + p.nome + '?')) return;
+        await sb.from('app_participants').delete().eq('id', p.id);
+        caricaPartecipanti();
+      });
+      list.appendChild(chip);
+    });
+  }
+
+  async function aggiungiPartecipante(){
+    const input = document.getElementById('newParticipant');
+    const nome = input.value.trim();
+    if(!nome) return;
+    await sb.from('app_participants').insert({ trip_id: currentTrip.id, nome });
+    input.value = '';
+    caricaPartecipanti();
+  }
+
+  // ---- Giorni e tappe ----
+  async function caricaGiorni(){
+    const { data: days } = await sb.from('app_days').select('*').eq('trip_id', currentTrip.id).order('numero');
+    const list = document.getElementById('daysList');
+    list.innerHTML = '';
+    for(const d of (days || [])){
+      const card = document.createElement('div');
+      card.className = 'day-card';
+      card.innerHTML =
+        '<div class="day-card-head"><b>G' + d.numero + ' — ' + (d.titolo || 'Senza titolo') + '</b>' +
+        '<button class="danger" data-del-day="' + d.id + '">Elimina giorno</button></div>' +
+        '<div style="font-size:12px;color:var(--ice-dim);margin-bottom:8px;">' + (d.sottotitolo || '') + '</div>' +
+        '<div id="stops-' + d.id + '"></div>' +
+        '<div class="stop-form">' +
+          '<input type="text" placeholder="Orario" id="so-' + d.id + '">' +
+          '<input type="text" placeholder="Nome tappa" id="sn-' + d.id + '">' +
+          '<input type="text" placeholder="Note" id="sd-' + d.id + '">' +
+          '<button onclick="aggiungiTappa(\'' + d.id + '\')">+</button>' +
+        '</div>';
+      list.appendChild(card);
+      card.querySelector('[data-del-day]').addEventListener('click', async () => {
+        if(!confirm('Eliminare l\'intero giorno ' + d.numero + '?')) return;
+        await sb.from('app_days').delete().eq('id', d.id);
+        caricaGiorni();
+      });
+      caricaTappe(d.id);
+    }
+  }
+
+  async function caricaTappe(dayId){
+    const { data: stops } = await sb.from('app_stops').select('*').eq('day_id', dayId).order('ordine');
+    const box = document.getElementById('stops-' + dayId);
+    box.innerHTML = '';
+    (stops || []).forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'stop-row';
+      row.innerHTML = '<span class="t">' + (s.orario || '') + '</span><span class="n">' + s.nome_tappa + (s.note ? ' — <span style="color:var(--ice-dim)">' + s.note + '</span>' : '') + '</span><button class="danger">✕</button>';
+      row.querySelector('button').addEventListener('click', async () => {
+        await sb.from('app_stops').delete().eq('id', s.id);
+        caricaTappe(dayId);
+      });
+      box.appendChild(row);
+    });
+  }
+
+  async function aggiungiTappa(dayId){
+    const orario = document.getElementById('so-' + dayId).value.trim();
+    const nome = document.getElementById('sn-' + dayId).value.trim();
+    const note = document.getElementById('sd-' + dayId).value.trim();
+    if(!nome) return;
+    const { data: existing } = await sb.from('app_stops').select('ordine').eq('day_id', dayId).order('ordine', { ascending: false }).limit(1);
+    const ordine = existing && existing.length ? existing[0].ordine + 1 : 0;
+    await sb.from('app_stops').insert({ day_id: dayId, orario, nome_tappa: nome, note, ordine });
+    document.getElementById('so-' + dayId).value = '';
+    document.getElementById('sn-' + dayId).value = '';
+    document.getElementById('sd-' + dayId).value = '';
+    caricaTappe(dayId);
+  }
+
+  function mostraFormNuovoGiorno(){
+    document.getElementById('newDayForm').classList.toggle('hidden');
+  }
+
+  async function salvaNuovoGiorno(){
+    const numero = parseInt(document.getElementById('nd-numero').value);
+    const titolo = document.getElementById('nd-titolo').value.trim();
+    const sottotitolo = document.getElementById('nd-sottotitolo').value.trim();
+    const luogo = document.getElementById('nd-luogo').value.trim();
+    const lat = parseFloat(document.getElementById('nd-lat').value) || null;
+    const lon = parseFloat(document.getElementById('nd-lon').value) || null;
+    const storia = document.getElementById('nd-storia').value.trim();
+
+    if(!numero || !titolo){
+      alert('Numero e titolo del giorno sono obbligatori.');
+      return;
+    }
+
+    await sb.from('app_days').insert({
+      trip_id: currentTrip.id, numero, titolo, sottotitolo, luogo, lat, lon, storia
+    });
+
+    ['nd-numero','nd-titolo','nd-sottotitolo','nd-luogo','nd-lat','nd-lon','nd-storia'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('newDayForm').classList.add('hidden');
+    caricaGiorni();
+  }
+</script>
+</body>
+</html>

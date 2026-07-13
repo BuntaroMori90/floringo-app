@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlorinGo — Viaggi smart, organizzati, personalizzati</title>
+<link rel="icon" href="assets/icon-badge.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --black: #0d0d0d;
+    --black-2: #161616;
+    --white: #ffffff;
+    --ice-dim: rgba(255,255,255,0.6);
+    --orange: #f5711a;
+    --orange-dim: rgba(245,113,26,0.12);
+    --line: rgba(255,255,255,0.1);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--black); color:var(--white); font-family:'Space Grotesk',sans-serif; }
+  img{ max-width:100%; display:block; }
+
+  header{ display:flex; justify-content:space-between; align-items:center; padding:22px 32px; border-bottom:1px solid var(--line); }
+  header img{ height:34px; width:auto; }
+  header nav a{ color:var(--ice-dim); text-decoration:none; font-size:14px; margin-left:26px; }
+  header nav a:hover{ color:var(--orange); }
+
+  .hero{ text-align:center; padding:80px 24px 70px; background:
+      radial-gradient(circle at 20% 20%, var(--orange-dim), transparent 45%),
+      radial-gradient(circle at 80% 10%, var(--orange-dim), transparent 40%);
+  }
+  .eyebrow{ font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; color:var(--orange); margin-bottom:18px; }
+  .hero h1{ font-size:44px; font-weight:700; line-height:1.15; max-width:680px; margin:0 auto 18px; }
+  .hero h1 span{ color:var(--orange); }
+  .hero p{ color:var(--ice-dim); font-size:17px; max-width:520px; margin:0 auto 34px; line-height:1.6; }
+  .cta-row{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .btn{ display:inline-block; padding:15px 30px; border-radius:100px; font-weight:700; font-size:15px; text-decoration:none; cursor:pointer; border:none; font-family:'Space Grotesk',sans-serif; }
+  .btn-primary{ background:var(--orange); color:var(--black); }
+  .btn-primary:hover{ background:#ff8330; }
+  .btn-secondary{ background:transparent; color:var(--white); border:1px solid var(--line); }
+  .btn-secondary:hover{ border-color:var(--orange); color:var(--orange); }
+
+  .section{ max-width:1000px; margin:0 auto; padding:80px 24px; }
+  .section-eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--orange); text-align:center; margin-bottom:12px; }
+  .section h2{ font-size:30px; text-align:center; margin-bottom:50px; font-weight:700; }
+
+  .steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  .step{ background:var(--black-2); border:1px solid var(--line); border-radius:16px; padding:30px 24px; }
+  .step .num{ font-family:'JetBrains Mono',monospace; color:var(--orange); font-size:13px; margin-bottom:14px; }
+  .step h3{ font-size:18px; margin-bottom:10px; }
+  .step p{ color:var(--ice-dim); font-size:14px; line-height:1.6; }
+
+  .features{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .feature{ background:var(--black-2); border:1px solid var(--line); border-radius:14px; padding:22px 24px; display:flex; gap:16px; align-items:flex-start; }
+  .feature .icon{ width:38px; height:38px; border-radius:10px; background:var(--orange-dim); color:var(--orange); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .feature h4{ font-size:15px; margin-bottom:6px; }
+  .feature p{ color:var(--ice-dim); font-size:13.5px; line-height:1.5; }
+
+  .cta-final{ text-align:center; background:var(--black-2); border:1px solid var(--line); border-radius:20px; padding:60px 30px; margin:0 24px 80px; }
+  .cta-final h2{ font-size:28px; margin-bottom:14px; }
+  .cta-final p{ color:var(--ice-dim); margin-bottom:26px; }
+
+  footer{ text-align:center; padding:30px; color:var(--ice-dim); font-size:12px; border-top:1px solid var(--line); }
+
+  @media (max-width:720px){
+    .hero h1{ font-size:32px; }
+    .steps, .features{ grid-template-columns:1fr; }
+    header nav{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="assets/logo-compact.png" alt="FlorinGo">
+  <nav>
+    <a href="#come-funziona">Come funziona</a>
+    <a href="#features">Funzioni</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Piattaforma per viaggi di gruppo</div>
+  <h1>Il tuo viaggio, <span>organizzato</span>. Il tuo gruppo, <span>coordinato</span>.</h1>
+  <p>Crea in pochi minuti uno spazio condiviso per il tuo viaggio: itinerario, checklist personale, note e spese — tutto in un unico link da condividere con chi parte con te.</p>
+  <div class="cta-row">
+    <a href="crea-viaggio.html" class="btn btn-primary">Crea il tuo viaggio</a>
+    <a href="#come-funziona" class="btn btn-secondary">Scopri come funziona</a>
+  </div>
+</section>
+
+<section class="section" id="come-funziona">
+  <div class="section-eyebrow">Come funziona</div>
+  <h2>Da zero al viaggio pronto, in tre passaggi</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="num">01</div>
+      <h3>Crea il tuo spazio</h3>
+      <p>Scegli un nome per il viaggio, imposta la data di partenza e ottieni subito un link unico da condividere con il gruppo.</p>
+    </div>
+    <div class="step">
+      <div class="num">02</div>
+      <h3>Costruisci l'itinerario</h3>
+      <p>Aggiungi giorno per giorno le tappe, oppure parti da un modello pronto e personalizzalo a modo tuo.</p>
+    </div>
+    <div class="step">
+      <div class="num">03</div>
+      <h3>Vivi il viaggio col gruppo</h3>
+      <p>Ognuno accede con il proprio nome: checklist personale, note condivise e spese si aggiornano in tempo reale per tutti.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="section-eyebrow">Cosa trovi dentro</div>
+  <h2>Tutto quello che serve, niente di superfluo</h2>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">✓</div>
+      <div><h4>Checklist personale</h4><p>Ogni partecipante ha la propria lista, con voci di base già pronte e la possibilità di aggiungerne altre.</p></div>
+    </div>
+    <div class="feature">
+      <div class="icon">✎</div>
+      <div><h4>Note di gruppo</h4><p>Uno spazio comune per lasciare messaggi, promemoria o idee visibili a tutti, firmati automaticamente.</p></div>
+    </div>
+    <div class="feature">
+      <div class="icon">€</div>
+      <div><h4>Spese condivise</h4><p>Registra chi ha pagato cosa: il saldo di ciascuno e i trasferimenti minimi per pareggiare i conti sono calcolati in automatico.</p></div>
+    </div>
+    <div class="feature">
+      <div class="icon">◈</div>
+      <div><h4>Itinerario giorno per giorno</h4><p>Tappe, orari, meteo in tempo reale e link diretti alle mappe, organizzati in un'unica timeline chiara.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-final">
+  <h2>Pronto a organizzare il tuo prossimo viaggio?</h2>
+  <p>Bastano due minuti per creare il tuo spazio di gruppo.</p>
+  <a href="crea-viaggio.html" class="btn btn-primary">Crea il tuo viaggio →</a>
+</div>
+
+<footer>
+  © 2026 FlorinGo — Viaggi smart, organizzati, personalizzati
+</footer>
+
+</body>
+</html>

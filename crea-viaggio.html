@@ -63,6 +63,10 @@
   <input type="password" id="editorPass" placeholder="Ti servirà per modificare l'itinerario">
   <div class="hint">La usi solo tu per accedere all'editor. Condividi invece il link pubblico con il gruppo.</div>
 
+  <label for="accessPass">Password di accesso per il gruppo (consigliata)</label>
+  <input type="password" id="accessPass" placeholder="Es. una parola facile da condividere">
+  <div class="hint">Chi ha solo il link ma non questa password non potrà entrare. Lasciala vuota per un accesso libero (sconsigliato).</div>
+
   <label>Parti da zero o da un modello</label>
   <div class="templates" id="templatesList">
     <div class="tpl-option selected" data-value="">
@@ -117,6 +121,7 @@
     const organizerName = document.getElementById('organizerName').value.trim();
     const data = document.getElementById('tripDate').value || null;
     const pass = document.getElementById('editorPass').value.trim();
+    const accessPass = document.getElementById('accessPass').value.trim() || null;
     const tplId = document.querySelector('input[name="tpl"]:checked').value;
     const msg = document.getElementById('msg');
 
@@ -129,7 +134,7 @@
     const slug = slugify(nome);
 
     const { data: trip, error } = await sb.from('app_trips')
-      .insert({ slug, nome, organizer_name: organizerName, data_partenza: data, editor_password: pass, is_template: false })
+      .insert({ slug, nome, organizer_name: organizerName, data_partenza: data, editor_password: pass, access_password: accessPass, is_template: false })
       .select().single();
 
     if(error){

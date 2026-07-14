@@ -96,12 +96,23 @@
   .trigger{ background:var(--night); border-left:2px solid var(--ember); border-radius:6px; padding:10px 12px; font-size:12.5px; color:var(--ice-dim); line-height:1.6; }
 
   @media (max-width:480px){ .mbs{ grid-template-columns:1fr; } }
+
+  @media print{
+    header.brand, .section-title button, .checklist input, .add-row, .note-item .del-btn,
+    #noteInput, .panel button, .exp-form, .day-arrow, #gate { display:none !important; }
+    body{ background:#fff; color:#000; }
+    .day-body{ display:block !important; }
+    .day, .panel{ background:#fff; border:1px solid #ccc; break-inside:avoid; }
+    .story, .day-sub, .checklist-progress, .paidby{ color:#444; }
+    .section-title{ color:#666; }
+    a{ color:#000; }
+  }
 </style>
 </head>
 <body>
 
 <header class="brand">
-  <a href="landing.html"><img src="assets/icon-badge.png" alt="FlorinGo"></a>
+  <a href="index.html"><img src="assets/icon-badge.png" alt="FlorinGo"></a>
   <div class="logo-text">Florin<b>Go</b></div>
 </header>
 
@@ -145,6 +156,11 @@
     <button onclick="inviaNota()" style="margin-top:8px;">Invia</button>
   </div>
 
+  <div class="section-title">Sondaggi</div>
+  <div class="panel" id="pollsPanel">
+    <div id="pollsList"></div>
+  </div>
+
   <div class="section-title">Spese di gruppo</div>
   <div class="panel">
     <div id="expensesList"></div>
@@ -158,7 +174,10 @@
     </div>
   </div>
 
-  <div class="section-title">Itinerario</div>
+  <div class="section-title" style="align-items:center;">
+    <span>Itinerario</span>
+    <button onclick="stampaItinerario()" style="width:auto; margin:0 0 0 10px; padding:6px 14px; font-size:12px; background:none; border:1px solid var(--line); color:var(--ice); border-radius:100px; cursor:pointer; font-family:'Space Grotesk',sans-serif;">🖨 Stampa</button>
+  </div>
   <div id="daysContainer"></div>
 </div>
 
@@ -206,6 +225,16 @@
     }
 
     window.currentUser = match;
+
+    // Personalizzazione visiva del viaggio
+    if(trip.color_primary) document.documentElement.style.setProperty('--accent-1', trip.color_primary);
+    if(trip.color_secondary) document.documentElement.style.setProperty('--accent-2', trip.color_secondary);
+    const brandName = trip.brand_name || 'FlorinGo';
+    document.querySelectorAll('.logo-text').forEach(el => el.innerHTML = brandName.replace(/(Go|GO)$/, '<b>$1</b>'));
+    if(trip.logo_url){
+      document.querySelectorAll('header.brand img').forEach(img => img.src = trip.logo_url);
+    }
+
     document.getElementById('gate').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     document.getElementById('appEyebrow').textContent = trip.nome;
@@ -226,6 +255,7 @@
     caricaNote();
     caricaSpese();
     caricaGiorni();
+    caricaSondaggi();
   }
 
   async function caricaPartecipanti(match){
@@ -415,6 +445,58 @@
     return (await r.json()).current_weather;
   }
   function linkMaps(nome){ return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(nome); }
+
+  function stampaItinerario(){
+    document.querySelectorAll('.day').forEach(d => d.classList.add('open'));
+    setTimeout(() => window.print(), 200);
+  }
+
+  // ---- Sondaggi ----
+  async function caricaSondaggi(){
+    const { data: polls } = await sb.from('app_polls').select('*').eq('trip_id', trip.id).order('created_at', { ascending: false });
+    const list = document.getElementById('pollsList');
+    list.innerHTML = '';
+    if(!polls || polls.length === 0){ list.innerHTML = '<div class="empty">Nessun sondaggio al momento.</div>'; return; }
+
+    for(const p of polls){
+      const { data: votes } = await sb.from('app_poll_votes').select('*').eq('poll_id', p.id);
+      const myVote = (votes || []).find(v => v.voter_name === window.currentUser);
+      const counts = p.options.map((_, i) => (votes || []).filter(v => v.option_index === i).length);
+      const totale = counts.reduce((a,b) => a+b, 0);
+
+      const box = document.createElement('div');
+      box.style.marginBottom = '18px';
+      box.style.paddingBottom = '14px';
+      box.style.borderBottom = '1px solid var(--line)';
+      const titolo = document.createElement('div');
+      titolo.style.fontSize = '14px';
+      titolo.style.fontWeight = '500';
+      titolo.style.marginBottom = '10px';
+      titolo.textContent = p.question;
+      box.appendChild(titolo);
+
+      p.options.forEach((opt, i) => {
+        const pct = totale > 0 ? Math.round(counts[i]/totale*100) : 0;
+        const optBox = document.createElement('div');
+        optBox.style.marginBottom = '8px';
+        optBox.style.cursor = myVote ? 'default' : 'pointer';
+
+        if(myVote){
+          const isMine = myVote.option_index === i;
+          optBox.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:13px;' + (isMine ? 'color:var(--accent-1);font-weight:500;' : 'color:var(--ice-dim);') + '"><span>' + opt + (isMine ? ' ✓' : '') + '</span><span>' + pct + '%</span></div>' +
+            '<div style="background:var(--night);border-radius:6px;height:6px;margin-top:4px;overflow:hidden;"><div style="width:' + pct + '%;background:' + (isMine ? 'var(--accent-1)' : 'var(--ice-dim)') + ';height:100%;"></div></div>';
+        } else {
+          optBox.innerHTML = '<div style="border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13.5px;">' + opt + '</div>';
+          optBox.addEventListener('click', async () => {
+            await sb.from('app_poll_votes').insert({ poll_id: p.id, voter_name: window.currentUser, option_index: i });
+            caricaSondaggi();
+          });
+        }
+        box.appendChild(optBox);
+      });
+      list.appendChild(box);
+    }
+  }
 
   async function caricaGiorni(){
     const { data: days } = await sb.from('app_days').select('*').eq('trip_id', trip.id).order('numero');

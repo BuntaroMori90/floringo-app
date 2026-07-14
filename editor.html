@@ -94,6 +94,14 @@
     </div>
   </div>
 
+  <div class="section-title">Accesso</div>
+  <div class="panel">
+    <label style="font-size:11px;color:var(--ice-dim);display:block;margin-bottom:4px;">Password di accesso per il gruppo</label>
+    <input type="text" id="accessPass" placeholder="Lascia vuoto per accesso libero (sconsigliato)">
+    <button onclick="salvaAccessPassword()" style="margin-top:8px;">Salva password</button>
+    <div style="font-size:11px;color:var(--ice-dim);margin-top:8px;">Chiunque abbia il link pubblico dovrà inserire anche questa password per entrare nel viaggio.</div>
+  </div>
+
   <div class="section-title">Personalizzazione</div>
   <div class="panel">
     <div class="day-fields">
@@ -189,6 +197,15 @@
     document.getElementById('logoUrl').value = data.logo_url || '';
     document.getElementById('colorPrimary').value = data.color_primary || '#f5711a';
     document.getElementById('colorSecondary').value = data.color_secondary || '#ff9a4d';
+    document.getElementById('accessPass').value = data.access_password || '';
+  }
+
+  async function salvaAccessPassword(){
+    const accessPass = document.getElementById('accessPass').value.trim() || null;
+    const { error } = await sb.from('app_trips').update({ access_password: accessPass }).eq('id', currentTrip.id);
+    if(error){ alert('Errore salvataggio: ' + error.message); return; }
+    currentTrip.access_password = accessPass;
+    alert(accessPass ? 'Password di accesso salvata.' : 'Accesso libero impostato (nessuna password).');
   }
 
   async function salvaBranding(){

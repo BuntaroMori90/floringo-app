@@ -40,7 +40,7 @@
 </head>
 <body>
 <header>
-  <a href="landing.html"><img src="assets/icon-badge.png" alt="FlorinGo"></a>
+  <a href="index.html"><img src="assets/icon-badge.png" alt="FlorinGo"></a>
   <div class="logo-text">Florin<b>Go</b></div>
 </header>
 <div class="page-center">
@@ -51,7 +51,11 @@
 
   <label for="tripName">Nome del viaggio</label>
   <input type="text" id="tripName" placeholder="Es. Weekend a Lisbona, Road trip Scozia...">
+  <div class="hint">Sarà visibile a tutti i partecipanti.</div>
 
+  <label for="organizerName">Il tuo nome (organizzatore)</label>
+  <input type="text" id="organizerName" placeholder="Es. Florindo">
+  <div class="hint">Resta privato, serve solo per identificarti come organizzatore.</div>
   <label for="tripDate">Data di partenza (opzionale)</label>
   <input type="date" id="tripDate">
 
@@ -110,21 +114,22 @@
 
   async function creaViaggio(){
     const nome = document.getElementById('tripName').value.trim();
+    const organizerName = document.getElementById('organizerName').value.trim();
     const data = document.getElementById('tripDate').value || null;
     const pass = document.getElementById('editorPass').value.trim();
     const tplId = document.querySelector('input[name="tpl"]:checked').value;
     const msg = document.getElementById('msg');
 
-    if(!nome || !pass){
+    if(!nome || !organizerName || !pass){
       msg.className = 'msg err';
-      msg.textContent = 'Inserisci almeno il nome del viaggio e una password.';
+      msg.textContent = 'Inserisci nome del viaggio, il tuo nome e una password.';
       return;
     }
 
     const slug = slugify(nome);
 
     const { data: trip, error } = await sb.from('app_trips')
-      .insert({ slug, nome, data_partenza: data, editor_password: pass, is_template: false })
+      .insert({ slug, nome, organizer_name: organizerName, data_partenza: data, editor_password: pass, is_template: false })
       .select().single();
 
     if(error){

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Seed template Giappone</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body{ font-family:sans-serif; background:#0d0d0d; color:#fff; padding:40px; max-width:600px; margin:0 auto; }
+  button{ padding:12px 20px; background:#f5711a; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:15px; color:#0d0d0d; }
+  #log{ margin-top:20px; font-family:monospace; font-size:13px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Seed: template "Giappone 15 giorni"</h1>
+<p>Da usare una sola volta per caricare l'itinerario Giappone come secondo template clonabile in crea-viaggio.html.</p>
+<button onclick="seed()">Crea template</button>
+<div id="log"></div>
+
+<script>
+  const sb = window.supabase.createClient(
+    'https://wymbqhzszfxcehaptlet.supabase.co',
+    'sb_publishable_6FkOsPv4J_sLheV7Oxviow_X3CX6CwN'
+  );
+
+  const giorni = [
+    { num:1, titolo:"Partenza e arrivo a Tokyo", sub:"Fiumicino → Helsinki → Haneda", luogo:"Ueno, Tokyo", lat:35.7141, lon:139.7744,
+      storia:"Partenza verso Fiumicino, volo con scalo a Helsinki e arrivo a Tokyo Haneda nel primo pomeriggio del giorno successivo. Attivazione SIM, ritiro Suica per i trasporti, trasferimento in hotel a Ueno e prima passeggiata serale tra il Parco di Ueno e il mercato di Ameyoko.",
+      schedule:[["10:40","Volo Fiumicino → Helsinki",""],["18:25","Volo Helsinki → Haneda","Arrivo 17/09 ore 14:40"],["—","Attivazione SIM e Suica","Ritiro contanti, controllo dogana con Visit Japan"],["—","Hotel Apa Ueno Hirokoji","Sistemazione"],["—","Parco di Ueno","Templi Kaneji, Toshogu, Stagno Shinobazu"],["—","Ameyoko","Mercato all'aperto, ritorno in hotel"]],
+      must:["Parco di Ueno"], bonus:["Ameyoko"], sac:[],
+      meta:{guida:"—",benzina:"—",cibo:"zona Ueno"}, trigger:"Volo lungo con scalo: pianificare riposo. Attivare il QR di Visit Japan prima della partenza.", maps:null },
+
+    { num:2, titolo:"Asakusa, Akihabara, Odaiba", sub:"Templi, elettronica e vista serale sulla baia", luogo:"Asakusa, Tokyo", lat:35.7148, lon:139.7967,
+      storia:"Giornata che attraversa tre anime diverse di Tokyo: il tempio Senso-ji e le vie tradizionali di Asakusa, il quartiere elettronico di Akihabara, e la baia di Odaiba con TeamLab Planet in serata.",
+      schedule:[["Mattina","Tempio Senso-ji","Porta Hozomon, Nakamise Dori, Kaminarimon"],["—","Tokyo Sky Tree","Osservatorio, prenotare 30gg prima"],["Pranzo","Korakuen Garden","Zona Akihabara"],["Pomeriggio","Akihabara","Santuario Kanda, negozi elettronica"],["Sera","Odaiba","TeamLab Planet ore 20-21, Rainbow Bridge al tramonto"]],
+      must:["Senso-ji","TeamLab Planet"], bonus:["Tokyo Sky Tree","Akihabara"], sac:["Korakuen Garden"],
+      meta:{guida:"mezzi pubblici",benzina:"—",cibo:"Akihabara pranzo, Odaiba cena"}, trigger:"Prenotare Tokyo Sky Tree con 30 giorni di anticipo e TeamLab Planet da luglio.", maps:null },
+
+    { num:3, titolo:"Marunouchi, Akasaka, Ginza, Shibuya", sub:"Dal Palazzo Imperiale alla vita notturna di Shibuya", luogo:"Ginza, Tokyo", lat:35.6717, lon:139.7650,
+      storia:"Giornata dedicata al centro istituzionale e commerciale di Tokyo: Palazzo Imperiale, mercato di Tsukiji, il quartiere di Shiodome con l'orologio Studio Ghibli, fino all'incrocio iconico di Shibuya in serata.",
+      schedule:[["Mattina","Marugoto Pass","Acquisto presso Tobu Station Asakusa"],["—","Palazzo Imperiale","Foto esterne"],["—","Akasaka","Passeggiata a tema Harry Potter"],["Pranzo","Mercato Tsukiji","Ginza, Nakadori Avenue"],["Pomeriggio","Shiodome","Orologio Studio Ghibli, Giardino Hama Rikyo, Tokyo Tower"],["Sera","Shibuya","Incrocio, Statua di Hachiko, Shibuya Sky"]],
+      must:["Shibuya Crossing","Mercato Tsukiji"], bonus:["Tokyo Tower","Giardino Hama Rikyo"], sac:["Museo Parassiti"],
+      meta:{guida:"mezzi pubblici",benzina:"—",cibo:"Tsukiji pranzo, Shibuya cena"}, trigger:"Shibuya Sky va acquistato in anticipo online, lista d'attesa.", maps:null },
+
+    { num:4, titolo:"Gotokuji, Harajuku, Shinjuku", sub:"Gatti della fortuna e vita notturna a Shinjuku", luogo:"Shinjuku, Tokyo", lat:35.6938, lon:139.7034,
+      storia:"Mattinata al santuario di Gotokuji per i Maneki Neko, poi Harajuku tra santuario Meiji e Takeshita Street, infine Shinjuku da vivere soprattutto dalle 18-19 in poi: Palazzo Metropolitano, Omoide Yokocho e Golden Gai.",
+      schedule:[["07:30","Partenza per Gotokuji","Tempio dei gatti della fortuna"],["—","Harajuku","Santuario Meiji, Parco Yoyogi, Takeshita Street"],["—","Omotesando","Shopping, Cat Street"],["Sera (18-19+)","Shinjuku","Palazzo Metropolitano, Omoide Yokocho, Golden Gai, Kabukicho"]],
+      must:["Santuario Meiji","Shinjuku serale"], bonus:["Gotokuji","Palazzo Metropolitano"], sac:[],
+      meta:{guida:"mezzi pubblici",benzina:"—",cibo:"Shinjuku Kabukicho"}, trigger:"Shinjuku va vissuta di sera: arrivarci non prima delle 18.", maps:null },
+
+    { num:5, titolo:"Nikko", sub:"Santuari e natura tra le montagne", luogo:"Nikko, Giappone", lat:36.7580, lon:139.6041,
+      storia:"Giornata fuori Tokyo verso Nikko: il ponte Shinkyu, i santuari Rinnoji e Toshogu, e un'escursione verso il lago Chuzenji e le cascate Kegon prima di rientrare in serata.",
+      schedule:[["07:30","Partenza da Asakusa Tobu","Treno per Tobu Nikko, circa 1h45"],["—","Ponte Shinkyu","Ingresso ai santuari"],["—","Rinnoji, Toshugo, Futarasan","Complesso di templi"],["—","Lago Chuzenji e Cascate Kegon","Con pullman, circa 1h"],["Sera","Rientro a Tokyo Asakusa","Treno serale"]],
+      must:["Santuario Toshogu"], bonus:["Lago Chuzenji","Cascate Kegon"], sac:["Abisso di Kanmangafuchi"],
+      meta:{guida:"treno + pullman",benzina:"—",cibo:"pranzo a sacco o in loco"}, trigger:"Comprare il Marugoto Nikko Pass due giorni prima (19 settembre). Verificare treno limitato diretto invece dei treni inclusi nel pass per risparmiare tempo.", maps:null },
+
+    { num:6, titolo:"Monte Fuji e Kawaguchiko", sub:"Tour giornaliero del Fuji", luogo:"Kawaguchiko, Giappone", lat:35.5061, lon:138.7614,
+      storia:"Tour organizzato di un'intera giornata verso il Monte Fuji e il lago Kawaguchiko. Prima di partire, occasione per spedire le valigie all'hotel di Kyoto tramite il servizio dell'Apa Hotel.",
+      schedule:[["—","Spedizione valigie a Kyoto","Consegnare in hotel entro le 13:00"],["07:16","Uscita da hotel","Verso Stazione di Tokyo"],["08:00","Partenza Tour Monte Fuji","Tour organizzato via Klook"],["Sera","Rientro a Tokyo","Serata libera in un quartiere diverso"]],
+      must:["Monte Fuji"], bonus:[], sac:[],
+      meta:{guida:"tour organizzato",benzina:"—",cibo:"incluso nel tour o in loco"}, trigger:"Decidere se spedire le valigie al rientro da Nikko o la mattina stessa prima del tour.", maps:null },
+
+    { num:7, titolo:"Arrivo a Kyoto", sub:"Kinkakuji e Nishiki Market", luogo:"Kyoto, Giappone", lat:35.0116, lon:135.7681,
+      storia:"Trasferimento con lo Shinkansen Nozomi verso Kyoto. Nel pomeriggio visita al Padiglione d'Oro (Kinkakuji) e passeggiata al mercato Nishiki, in serata prima esplorazione del quartiere di Gion.",
+      schedule:[["08:24","Shinkansen Nozomi verso Kyoto","Arrivo 10:39"],["—","Deposito bagagli in stazione","Hotel check-in dalle 16:00"],["—","Kinkakuji","Padiglione d'oro, circa 2 ore"],["—","Nishiki Market","Pranzo"],["Sera","Quartiere Gion","Prima passeggiata serale"]],
+      must:["Kinkakuji"], bonus:["Nishiki Market","Gion"], sac:[],
+      meta:{guida:"Shinkansen + bus urbani",benzina:"—",cibo:"Nishiki Market"}, trigger:"Acquistare il pass giornaliero bus (servono 3 pass per i 3 giorni a Kyoto).", maps:null },
+
+    { num:8, titolo:"Kyoto — Fushimi Inari e dintorni", sub:"Torii, castello e tempio dell'acqua", luogo:"Kyoto, Giappone", lat:35.0116, lon:135.7681,
+      storia:"Giornata dedicata ai grandi classici di Kyoto: il santuario Fushimi Inari con i suoi torii, il Castello di Nijo, il tempio zen di Kenninji e Kiyomizudera al tramonto, chiudendo la serata a Pontocho.",
+      schedule:[["Mattina","Fushimi Inari","Circa 2 ore per foto e percorso"],["—","Castello di Nijo",""],["—","Kenninji","Tempio più antico, giardino zen"],["Tramonto","Kiyomizudera","Patrimonio Unesco, attraverso Sannenzaka"],["Sera","Pontocho","Cena"]],
+      must:["Fushimi Inari","Kiyomizudera"], bonus:["Castello di Nijo"], sac:["Kenninji"],
+      meta:{guida:"bus urbani",benzina:"—",cibo:"Pontocho"}, trigger:"Arrivare a Kiyomizudera verso il tramonto per la luce migliore.", maps:null },
+
+    { num:9, titolo:"Arashiyama", sub:"Foresta di bambù e cerimonia del tè", luogo:"Arashiyama, Kyoto", lat:35.0094, lon:135.6674,
+      storia:"Giornata immersiva ad Arashiyama: la celebre foresta di bambù, il tempio Tenryu-ji con il suo giardino zen, e diversi templi minori lungo il percorso. Si chiude con una cerimonia del tè prenotata in anticipo nel tardo pomeriggio.",
+      schedule:[["Mattina","Attivazione JR Kansai Hiroshima Pass","Ufficio JR Kyoto"],["—","Foresta di bambù","Tramite stazione Saga Arashiyama"],["—","Tempio Tenryu-ji","Giardino zen"],["—","Okochi Sanso, Adashino Nenbutsuji","Templi minori"],["17:00","Cerimonia del tè","Prenotata in anticipo, durata 45min"]],
+      must:["Foresta di bambù","Cerimonia del tè"], bonus:["Tempio Tenryu-ji"], sac:["Parco delle Scimmie"],
+      meta:{guida:"treno + a piedi",benzina:"—",cibo:"da valutare in base ai tempi"}, trigger:"La cerimonia del tè va prenotata con largo anticipo online.", maps:null },
+
+    { num:10, titolo:"Nara e Uji", sub:"Cervi sacri e città del tè verde", luogo:"Nara, Giappone", lat:34.6851, lon:135.8048,
+      storia:"Giornata su due città: Nara con i suoi templi (Todai-ji, Kasuga Taisha) e il celebre parco dei cervi, poi Uji, cittadina del tè verde, con il tempio Byodo-In.",
+      schedule:[["Mattina","Stazione JR di Nara","Linea JR Nara"],["—","Todai-ji, Kasuga Taisha","Parco di Nara, cervi sacri"],["—","Naramachi","Quartiere pittoresco"],["Pomeriggio","Uji","Byodo-In, shopping tè verde"],["Sera","Ritorno a Kyoto","35 min JR Nara Line"]],
+      must:["Todai-ji","Parco di Nara"], bonus:["Byodo-In Uji"], sac:["Isuien Garden"],
+      meta:{guida:"JR Nara Line",benzina:"—",cibo:"Nara pranzo a sacco, Uji shopping tè"}, trigger:null, maps:null },
+
+    { num:11, titolo:"Osaka", sub:"Castello, Dotonbori e street food", luogo:"Osaka, Giappone", lat:34.6937, lon:135.5023,
+      storia:"Giornata a Osaka: il castello, il santuario Sumiyoshi Taisha, il quartiere Shinsekai per il pranzo, e la sera nel quartiere luminoso di Dotonbori tra street food e shopping.",
+      schedule:[["Mattina","Umeda Osaka Station","Eventuale Umeda Sky Building"],["—","Castello di Osaka","Circa 2 ore di visita"],["—","Sumiyoshi Taisha",""],["Pranzo","Shinsekai","Quartiere ristoranti"],["Sera","Dotonbori","Zona luminescente, street food"]],
+      must:["Castello di Osaka","Dotonbori"], bonus:["Sumiyoshi Taisha"], sac:["Acquario di Osaka"],
+      meta:{guida:"mezzi pubblici",benzina:"—",cibo:"Shinsekai pranzo, Dotonbori cena"}, trigger:"Ultimo treno di rientro a Kyoto verso mezzanotte.", maps:null },
+
+    { num:12, titolo:"Hiroshima e Miyajima", sub:"Memoria e il Torii sul mare", luogo:"Miyajima, Giappone", lat:34.2960, lon:132.3197,
+      storia:"Trasferimento a Hiroshima con lo Shinkansen One Piece, visita al Museo della Pace e all'Atomic Dome, poi traghetto verso l'isola di Miyajima per il pernottamento e la passeggiata serale al Torii galleggiante.",
+      schedule:[["Mattina","Shinkansen verso Hiroshima","Circa 2 ore, prenotare posti"],["—","Museo della Pace, Atomic Dome","Memoriale della Pace"],["—","Downtown, Castello di Hiroshima",""],["17:00","Traghetto per Miyajima","Ultimo utile"],["Sera","Passeggiata al Torii","Cena in hotel"]],
+      must:["Museo della Pace","Torii di Miyajima"], bonus:["Castello di Hiroshima"], sac:["Shukkeien Garden"],
+      meta:{guida:"Shinkansen + traghetto",benzina:"—",cibo:"cena inclusa in hotel Miyajima"}, trigger:"Spedire i bagagli all'hotel di Yokohama per trovarli il giorno dopo.", maps:null },
+
+    { num:13, titolo:"Miyajima e trasferimento a Yokohama", sub:"Santuario di Itsukushima e sera a Minato Mirai", luogo:"Yokohama, Giappone", lat:35.4437, lon:139.6380,
+      storia:"Mattinata a Miyajima con il Santuario di Itsukushima e la funicolare panoramica, poi lungo trasferimento in Shinkansen verso Yokohama, con serata tra Chinatown e il quartiere di Minato Mirai.",
+      schedule:[["Mattina","Santuario di Itsukushima","Torii galleggiante"],["—","Funicolare di Miyajima","Vista dall'alto"],["Mezzogiorno","Traghetto di ritorno","Verso Hiroshima"],["Pomeriggio","Shinkansen verso Yokohama","Shin-Osaka → Shin-Yokohama"],["Sera","Chinatown e Minato Mirai 21","Sky Garden, Red Brick Warehouse"]],
+      must:["Santuario di Itsukushima"], bonus:["Minato Mirai 21"], sac:["Funicolare Miyajima"],
+      meta:{guida:"traghetto + Shinkansen",benzina:"—",cibo:"Chinatown Yokohama"}, trigger:"Giornata di trasferimento lungo: valutare l'orario in base al traghetto disponibile.", maps:null },
+
+    { num:14, titolo:"Kamakura", sub:"Il Grande Buddha e rientro verso Haneda", luogo:"Kamakura, Giappone", lat:35.3193, lon:139.5466,
+      storia:"Ultima giornata di visite: Kamakura con il Grande Buddha, il tempio Hasedera e la strada dello shopping Komachi Dori, poi rientro a Yokohama per ritirare i bagagli e trasferimento in aeroporto per il volo di rientro.",
+      schedule:[["Mattina","Deposito bagagli a Yokohama","Treno per Kamakura"],["—","Kotoku-in, Grande Buddha",""],["—","Hasedera, Komachi Dori","Tsurugaoka Hachiman"],["17:00","Ritorno a Yokohama","Ritiro bagagli"],["—","Trasferimento a Haneda","Arrivo 3 ore prima del volo"],["21:50","Volo per Helsinki","Arrivo 04:40 del 1° ottobre"]],
+      must:["Grande Buddha"], bonus:["Tsurugaoka Hachiman"], sac:["Komachi Dori"],
+      meta:{guida:"treno",benzina:"—",cibo:"Kamakura pranzo, cena in aeroporto"}, trigger:"Rispettare l'orario di ritiro bagagli e trasferimento, ultimo giorno prima del volo notturno.", maps:null },
+
+    { num:15, titolo:"Rientro in Italia", sub:"Helsinki → Roma → Casa", luogo:"Roma Fiumicino, Italia", lat:41.8003, lon:12.2389,
+      storia:"Scalo a Helsinki e volo di rientro verso Roma Fiumicino, ritiro auto dal parcheggio e rientro a casa.",
+      schedule:[["04:40","Arrivo a Helsinki","Scalo di circa 3 ore"],["07:20","Volo per Roma Fiumicino","Arrivo 09:45"],["—","Ritiro bagagli e auto","Rientro a casa]],
+      must:[], bonus:[], sac:[], meta:{guida:"—",benzina:"—",cibo:"—"}, trigger:null, maps:null }
+  ];
+
+  async function seed(){
+    const log = document.getElementById('log');
+    log.textContent = 'Creo il viaggio-template Giappone...\n';
+
+    const { data: existing } = await sb.from('app_trips').select('id').eq('slug', 'giappone-esempio').maybeSingle();
+    if(existing){
+      log.textContent += 'Template già esistente. Elimino e ricreo...\n';
+      await sb.from('app_trips').delete().eq('id', existing.id);
+    }
+
+    const { data: trip, error } = await sb.from('app_trips').insert({
+      slug: 'giappone-esempio', nome: 'Giappone 15 giorni (esempio)', editor_password: 'template', is_template: true
+    }).select().single();
+
+    if(error){ log.textContent += 'Errore: ' + error.message; return; }
+
+    for(const g of giorni){
+      const { data: day } = await sb.from('app_days').insert({
+        trip_id: trip.id, numero: g.num, titolo: g.titolo, sottotitolo: g.sub, storia: g.storia,
+        luogo: g.luogo, lat: g.lat, lon: g.lon, percorso_maps_url: g.maps,
+        must: g.must, bonus: g.bonus, sacrificabili: g.sac,
+        meta_guida: g.meta.guida, meta_benzina: g.meta.benzina, meta_cibo: g.meta.cibo,
+        trigger_html: g.trigger
+      }).select().single();
+
+      const stops = g.schedule.map((s, idx) => ({ day_id: day.id, orario: s[0], nome_tappa: s[1], note: s[2], ordine: idx }));
+      await sb.from('app_stops').insert(stops);
+      log.textContent += 'Giorno ' + g.num + ' creato con ' + stops.length + ' tappe.\n';
+    }
+
+    log.textContent += '\nFatto! Il template "Giappone 15 giorni (esempio)" è ora selezionabile in crea-viaggio.html.';
+  }
+</script>
+</body>
+</html>

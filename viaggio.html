@@ -121,6 +121,7 @@
     <div class="eyebrow" id="tripEyebrow">Accesso</div>
     <h1 id="tripName">Caricamento...</h1>
     <div class="sub">Inserisci il tuo nome per entrare.</div>
+    <input type="password" id="accessPassInput" placeholder="Password del gruppo" class="hidden">
     <input type="text" id="nameInput" placeholder="Il tuo nome" autocomplete="off">
     <button onclick="checkAccess()">Entra</button>
     <div class="msg" id="gateMsg"></div>
@@ -203,16 +204,28 @@
     }
     trip = data;
     document.getElementById('tripName').textContent = trip.nome;
+    if(trip.access_password){
+      document.getElementById('accessPassInput').classList.remove('hidden');
+    }
   }
   initGate();
 
   document.getElementById('nameInput').addEventListener('keydown', e => { if(e.key === 'Enter') checkAccess(); });
+  document.getElementById('accessPassInput').addEventListener('keydown', e => { if(e.key === 'Enter') checkAccess(); });
   document.getElementById('newChecklistItem').addEventListener('keydown', e => { if(e.key === 'Enter') aggiungiVoceChecklist(); });
 
   async function checkAccess(){
     if(!trip) return;
     const nome = document.getElementById('nameInput').value.trim();
     if(!nome){ document.getElementById('gateMsg').textContent = 'Inserisci un nome.'; return; }
+
+    if(trip.access_password){
+      const pass = document.getElementById('accessPassInput').value;
+      if(pass !== trip.access_password){
+        document.getElementById('gateMsg').textContent = 'Password del gruppo errata.';
+        return;
+      }
+    }
 
     let { data: existing } = await sb.from('app_participants').select('*').eq('trip_id', trip.id).ilike('nome', nome);
     let match;

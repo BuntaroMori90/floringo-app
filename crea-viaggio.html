@@ -138,6 +138,9 @@
       return;
     }
 
+    // L'organizzatore è automaticamente il primo partecipante del gruppo
+    await sb.from('app_participants').insert({ trip_id: trip.id, nome: organizerName });
+
     if(tplId){
       await clonaTemplate(tplId, trip.id);
     }

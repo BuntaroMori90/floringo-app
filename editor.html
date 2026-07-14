@@ -26,6 +26,7 @@
   input:focus, select:focus, textarea:focus{ border-color:var(--accent-2); }
   button{ padding:11px 18px; border:none; border-radius:8px; background:linear-gradient(90deg,var(--accent-1),var(--accent-2)); color:var(--night); font-weight:700; cursor:pointer; font-family:'Space Grotesk',sans-serif; font-size:14px; }
   button.secondary{ background:none; border:1px solid var(--line); color:var(--ice); font-weight:500; }
+  button:disabled{ opacity:0.3; cursor:not-allowed; }
   button.danger{ background:none; border:1px solid var(--ember); color:var(--ember); font-weight:500; padding:6px 10px; font-size:12px; }
   .msg{ font-size:13px; margin-top:10px; font-family:'JetBrains Mono',monospace; }
   .msg.err{ color:var(--ember); }
@@ -63,7 +64,7 @@
 <body>
 
 <header class="brand">
-  <a href="landing.html"><img src="assets/icon-badge.png" alt="FlorinGo"></a>
+  <a href="index.html"><img src="assets/icon-badge.png" alt="FlorinGo"></a>
   <div class="logo-text">Florin<b>Go</b></div>
 </header>
 
@@ -90,6 +91,43 @@
     <div class="inline-form">
       <input type="text" id="newParticipant" placeholder="Nome partecipante">
       <button onclick="aggiungiPartecipante()">Aggiungi</button>
+    </div>
+  </div>
+
+  <div class="section-title">Personalizzazione</div>
+  <div class="panel">
+    <div class="day-fields">
+      <div>
+        <label style="font-size:11px;color:var(--ice-dim);display:block;margin-bottom:4px;">Nome da mostrare (brand)</label>
+        <input type="text" id="brandName" placeholder="FlorinGo">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--ice-dim);display:block;margin-bottom:4px;">URL logo (opzionale)</label>
+        <input type="text" id="logoUrl" placeholder="https://...">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--ice-dim);display:block;margin-bottom:4px;">Colore principale</label>
+        <input type="color" id="colorPrimary" value="#f5711a" style="height:42px;padding:4px;">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--ice-dim);display:block;margin-bottom:4px;">Colore secondario</label>
+        <input type="color" id="colorSecondary" value="#ff9a4d" style="height:42px;padding:4px;">
+      </div>
+      <div style="grid-column:1/-1;"><button onclick="salvaBranding()">Salva personalizzazione</button></div>
+    </div>
+  </div>
+
+  <div class="section-title">Sondaggi</div>
+  <div class="panel">
+    <div id="pollsList"></div>
+    <div style="margin-top:14px;">
+      <input type="text" id="pollQuestion" placeholder="Domanda del sondaggio">
+      <div id="pollOptionsInputs">
+        <input type="text" class="poll-opt" placeholder="Opzione 1">
+        <input type="text" class="poll-opt" placeholder="Opzione 2">
+      </div>
+      <button class="secondary" onclick="aggiungiOpzionePoll()" style="margin-bottom:10px;">+ Aggiungi opzione</button>
+      <button onclick="creaSondaggio()">Crea sondaggio</button>
     </div>
   </div>
 
@@ -140,11 +178,27 @@
     document.getElementById('gate').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     document.getElementById('tripTitle').textContent = data.nome;
-    const link = window.location.origin + window.location.pathname.replace('editor.html','viaggio.html') + '?t=' + data.slug;
+    const link = window.location.origin + '/floringo-app/viaggio/' + data.slug;
     document.getElementById('publicLink').textContent = link;
     document.getElementById('publicLink').href = link;
     caricaPartecipanti();
     caricaGiorni();
+    caricaSondaggi();
+
+    document.getElementById('brandName').value = data.brand_name || 'FlorinGo';
+    document.getElementById('logoUrl').value = data.logo_url || '';
+    document.getElementById('colorPrimary').value = data.color_primary || '#f5711a';
+    document.getElementById('colorSecondary').value = data.color_secondary || '#ff9a4d';
+  }
+
+  async function salvaBranding(){
+    const brand_name = document.getElementById('brandName').value.trim() || 'FlorinGo';
+    const logo_url = document.getElementById('logoUrl').value.trim() || null;
+    const color_primary = document.getElementById('colorPrimary').value;
+    const color_secondary = document.getElementById('colorSecondary').value;
+    const { error } = await sb.from('app_trips').update({ brand_name, logo_url, color_primary, color_secondary }).eq('id', currentTrip.id);
+    if(error){ alert('Errore salvataggio: ' + error.message); return; }
+    alert('Personalizzazione salvata.');
   }
 
   document.getElementById('passInput').addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
@@ -209,11 +263,18 @@
     const { data: stops } = await sb.from('app_stops').select('*').eq('day_id', dayId).order('ordine');
     const box = document.getElementById('stops-' + dayId);
     box.innerHTML = '';
-    (stops || []).forEach(s => {
+    (stops || []).forEach((s, idx) => {
       const row = document.createElement('div');
       row.className = 'stop-row';
-      row.innerHTML = '<span class="t">' + (s.orario || '') + '</span><span class="n">' + s.nome_tappa + (s.note ? ' — <span style="color:var(--ice-dim)">' + s.note + '</span>' : '') + '</span><button class="danger">✕</button>';
-      row.querySelector('button').addEventListener('click', async () => {
+      row.innerHTML = '<span class="t">' + (s.orario || '') + '</span><span class="n">' + s.nome_tappa + (s.note ? ' — <span style="color:var(--ice-dim)">' + s.note + '</span>' : '') + '</span>' +
+        '<div style="display:flex;gap:4px;">' +
+        '<button class="secondary" style="padding:4px 8px;font-size:11px;" data-up ' + (idx===0?'disabled':'') + '>↑</button>' +
+        '<button class="secondary" style="padding:4px 8px;font-size:11px;" data-down ' + (idx===stops.length-1?'disabled':'') + '>↓</button>' +
+        '<button class="danger">✕</button>' +
+        '</div>';
+      row.querySelector('[data-up]').addEventListener('click', () => spostaTappa(dayId, s.id, -1));
+      row.querySelector('[data-down]').addEventListener('click', () => spostaTappa(dayId, s.id, 1));
+      row.querySelector('.danger').addEventListener('click', async () => {
         await sb.from('app_stops').delete().eq('id', s.id);
         caricaTappe(dayId);
       });
@@ -233,6 +294,70 @@
     document.getElementById('sn-' + dayId).value = '';
     document.getElementById('sd-' + dayId).value = '';
     caricaTappe(dayId);
+  }
+
+  async function spostaTappa(dayId, stopId, direzione){
+    // direzione: -1 = su, +1 = giù. Scambia il campo "ordine" con la tappa adiacente.
+    const { data: stops } = await sb.from('app_stops').select('*').eq('day_id', dayId).order('ordine');
+    const idx = stops.findIndex(s => s.id === stopId);
+    const targetIdx = idx + direzione;
+    if(targetIdx < 0 || targetIdx >= stops.length) return;
+    const a = stops[idx], b = stops[targetIdx];
+    await sb.from('app_stops').update({ ordine: b.ordine }).eq('id', a.id);
+    await sb.from('app_stops').update({ ordine: a.ordine }).eq('id', b.id);
+    caricaTappe(dayId);
+  }
+
+  // ---- Sondaggi ----
+  function aggiungiOpzionePoll(){
+    const container = document.getElementById('pollOptionsInputs');
+    if(container.children.length >= 6) return;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'poll-opt';
+    input.placeholder = 'Opzione ' + (container.children.length + 1);
+    container.appendChild(input);
+  }
+
+  async function creaSondaggio(){
+    const question = document.getElementById('pollQuestion').value.trim();
+    const options = Array.from(document.querySelectorAll('.poll-opt')).map(i => i.value.trim()).filter(Boolean);
+    if(!question || options.length < 2){
+      alert('Serve una domanda e almeno 2 opzioni.');
+      return;
+    }
+    await sb.from('app_polls').insert({ trip_id: currentTrip.id, question, options });
+    document.getElementById('pollQuestion').value = '';
+    document.getElementById('pollOptionsInputs').innerHTML = '<input type="text" class="poll-opt" placeholder="Opzione 1"><input type="text" class="poll-opt" placeholder="Opzione 2">';
+    caricaSondaggi();
+  }
+
+  async function caricaSondaggi(){
+    const { data: polls } = await sb.from('app_polls').select('*').eq('trip_id', currentTrip.id).order('created_at', { ascending: false });
+    const list = document.getElementById('pollsList');
+    list.innerHTML = '';
+    if(!polls || polls.length === 0){ list.innerHTML = '<div style="font-size:13px;color:var(--ice-dim);font-style:italic;">Nessun sondaggio creato.</div>'; return; }
+
+    for(const p of polls){
+      const { data: votes } = await sb.from('app_poll_votes').select('option_index').eq('poll_id', p.id);
+      const counts = p.options.map((_, i) => (votes || []).filter(v => v.option_index === i).length);
+      const totale = counts.reduce((a,b) => a+b, 0);
+
+      const card = document.createElement('div');
+      card.className = 'day-card';
+      card.innerHTML = '<div class="day-card-head"><b>' + p.question + '</b><button class="danger" data-del-poll="' + p.id + '">Elimina</button></div>' +
+        p.options.map((opt, i) => {
+          const pct = totale > 0 ? Math.round(counts[i]/totale*100) : 0;
+          return '<div style="font-size:13px;margin:6px 0;"><div style="display:flex;justify-content:space-between;"><span>' + opt + '</span><span style="color:var(--ice-dim);">' + counts[i] + ' voti (' + pct + '%)</span></div>' +
+            '<div style="background:var(--night);border-radius:6px;height:6px;margin-top:4px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--accent-1);height:100%;"></div></div></div>';
+        }).join('');
+      list.appendChild(card);
+      card.querySelector('[data-del-poll]').addEventListener('click', async () => {
+        if(!confirm('Eliminare questo sondaggio?')) return;
+        await sb.from('app_polls').delete().eq('id', p.id);
+        caricaSondaggi();
+      });
+    }
   }
 
   function mostraFormNuovoGiorno(){

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Il tuo viaggio</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
   :root{
@@ -19,6 +20,7 @@
   header.brand .logo-text b{ color:var(--accent-1); font-weight:700; }
   .hidden{ display:none !important; }
   #gate{ min-height:calc(100vh - 70px); display:flex; align-items:center; justify-content:center; padding:24px; }
+  #toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--night-2); border:1px solid var(--line); border-radius:10px; padding:12px 20px; font-size:13px; display:none; z-index:999; max-width:90vw; }
   .card{ width:100%; max-width:420px; background:var(--night-2); border:1px solid var(--line); border-radius:18px; padding:36px 30px; }
   .eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent-2); margin-bottom:8px; }
   h1{ font-size:28px; font-weight:700; margin-bottom:6px; }
@@ -178,6 +180,7 @@
   <div class="section-title" style="align-items:center;">
     <span>Itinerario</span>
     <button onclick="stampaItinerario()" style="width:auto; margin:0 0 0 10px; padding:6px 14px; font-size:12px; background:none; border:1px solid var(--line); color:var(--ice); border-radius:100px; cursor:pointer; font-family:'Space Grotesk',sans-serif;">🖨 Stampa</button>
+    <button onclick="esportaPDF()" style="width:auto; margin:0 0 0 6px; padding:6px 14px; font-size:12px; background:none; border:1px solid var(--line); color:var(--ice); border-radius:100px; cursor:pointer; font-family:'Space Grotesk',sans-serif;">⬇ Esporta PDF</button>
   </div>
   <div id="daysContainer"></div>
 </div>
@@ -214,6 +217,16 @@
   document.getElementById('accessPassInput').addEventListener('keydown', e => { if(e.key === 'Enter') checkAccess(); });
   document.getElementById('newChecklistItem').addEventListener('keydown', e => { if(e.key === 'Enter') aggiungiVoceChecklist(); });
 
+  function toast(msg, isError){
+    const t = document.getElementById('toast');
+    if(!t) return;
+    t.textContent = msg;
+    t.style.borderColor = isError ? '#e8544f' : 'var(--line)';
+    t.style.display = 'block';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => t.style.display = 'none', 4000);
+  }
+
   async function checkAccess(){
     if(!trip) return;
     const nome = document.getElementById('nameInput').value.trim();
@@ -227,48 +240,57 @@
       }
     }
 
-    let { data: existing } = await sb.from('app_participants').select('*').eq('trip_id', trip.id).ilike('nome', nome);
-    let match;
-    if(existing && existing.length){
-      match = existing[0].nome;
-    } else {
-      // self-registrazione: chi entra per la prima volta con un nome nuovo viene aggiunto al gruppo
-      const { data: created } = await sb.from('app_participants').insert({ trip_id: trip.id, nome }).select().single();
-      match = created ? created.nome : nome;
+    const btn = document.querySelector('button[onclick="checkAccess()"]');
+    if(btn){ btn.disabled = true; btn.textContent = 'Accesso in corso…'; }
+    document.getElementById('gateMsg').textContent = '';
+
+    try{
+      let { data: existing } = await sb.from('app_participants').select('*').eq('trip_id', trip.id).ilike('nome', nome);
+      let match;
+      if(existing && existing.length){
+        match = existing[0].nome;
+      } else {
+        // self-registrazione: chi entra per la prima volta con un nome nuovo viene aggiunto al gruppo
+        const { data: created } = await sb.from('app_participants').insert({ trip_id: trip.id, nome }).select().single();
+        match = created ? created.nome : nome;
+      }
+
+      window.currentUser = match;
+
+      // Personalizzazione visiva del viaggio
+      if(trip.color_primary) document.documentElement.style.setProperty('--accent-1', trip.color_primary);
+      if(trip.color_secondary) document.documentElement.style.setProperty('--accent-2', trip.color_secondary);
+      const brandName = trip.brand_name || 'FlorinGo';
+      document.querySelectorAll('.logo-text').forEach(el => el.innerHTML = brandName.replace(/(Go|GO)$/, '<b>$1</b>'));
+      if(trip.logo_url){
+        document.querySelectorAll('header.brand img').forEach(img => img.src = trip.logo_url);
+      }
+
+      document.getElementById('gate').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      document.getElementById('appEyebrow').textContent = trip.nome;
+      document.getElementById('welcomeMsg').innerHTML = 'Bentornato, <b>' + match + '</b>';
+      document.getElementById('appTitle').textContent = 'On the road';
+
+      if(trip.data_partenza){
+        const oggi = new Date();
+        const partenza = new Date(trip.data_partenza);
+        const giorni = Math.max(0, Math.ceil((partenza - oggi) / 86400000));
+        document.getElementById('daysLeft').textContent = giorni;
+      } else {
+        document.getElementById('countdownRow').classList.add('hidden');
+      }
+
+      caricaPartecipanti(match);
+      caricaChecklist(match);
+      caricaNote();
+      caricaSpese();
+      caricaGiorni();
+      caricaSondaggi();
+    }catch(e){
+      document.getElementById('gateMsg').textContent = 'Impossibile contattare il server. Controlla la connessione e riprova.';
+      if(btn){ btn.disabled = false; btn.textContent = 'Entra'; }
     }
-
-    window.currentUser = match;
-
-    // Personalizzazione visiva del viaggio
-    if(trip.color_primary) document.documentElement.style.setProperty('--accent-1', trip.color_primary);
-    if(trip.color_secondary) document.documentElement.style.setProperty('--accent-2', trip.color_secondary);
-    const brandName = trip.brand_name || 'FlorinGo';
-    document.querySelectorAll('.logo-text').forEach(el => el.innerHTML = brandName.replace(/(Go|GO)$/, '<b>$1</b>'));
-    if(trip.logo_url){
-      document.querySelectorAll('header.brand img').forEach(img => img.src = trip.logo_url);
-    }
-
-    document.getElementById('gate').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    document.getElementById('appEyebrow').textContent = trip.nome;
-    document.getElementById('welcomeMsg').innerHTML = 'Bentornato, <b>' + match + '</b>';
-    document.getElementById('appTitle').textContent = 'On the road';
-
-    if(trip.data_partenza){
-      const oggi = new Date();
-      const partenza = new Date(trip.data_partenza);
-      const giorni = Math.max(0, Math.ceil((partenza - oggi) / 86400000));
-      document.getElementById('daysLeft').textContent = giorni;
-    } else {
-      document.getElementById('countdownRow').classList.add('hidden');
-    }
-
-    caricaPartecipanti(match);
-    caricaChecklist(match);
-    caricaNote();
-    caricaSpese();
-    caricaGiorni();
-    caricaSondaggi();
   }
 
   async function caricaPartecipanti(match){
@@ -294,12 +316,8 @@
 
   // ---- Checklist personale ----
   const valigiaDefault = [
-    "Documenti, Carta d'Identità, Passaporto",
-    "Biglietti Voli",
-    "Prenotazione Hotel e/o Attività",
-    "Carta di Credito/Debito, Contanti", 
-    "Patente",
-    "Caricabatterie e Powerbank",
+    "Documenti, carta di credito, patente",
+    "Caricabatterie e batteria esterna",
     "Kit di pronto soccorso personale"
   ];
 
@@ -377,9 +395,14 @@
     const input = document.getElementById('noteInput');
     const testo = input.value.trim();
     if(!testo) return;
-    await sb.from('app_notes').insert({ trip_id: trip.id, author_name: window.currentUser, content: testo });
-    input.value = '';
-    caricaNote();
+    try{
+      const { error } = await sb.from('app_notes').insert({ trip_id: trip.id, author_name: window.currentUser, content: testo });
+      if(error) throw error;
+      input.value = '';
+      caricaNote();
+    }catch(e){
+      toast('Non sono riuscito a salvare la nota. Controlla la connessione e riprova.', true);
+    }
   }
 
   // ---- Spese ----
@@ -441,9 +464,14 @@
     const amount = parseFloat(document.getElementById('expAmount').value);
     const paidBy = document.getElementById('expPaidBy').value;
     if(!desc || !amount || amount<=0) return;
-    await sb.from('app_expenses').insert({ trip_id: trip.id, description: desc, amount, paid_by: paidBy });
-    document.getElementById('expDesc').value=''; document.getElementById('expAmount').value='';
-    caricaSpese();
+    try{
+      const { error } = await sb.from('app_expenses').insert({ trip_id: trip.id, description: desc, amount, paid_by: paidBy });
+      if(error) throw error;
+      document.getElementById('expDesc').value=''; document.getElementById('expAmount').value='';
+      caricaSpese();
+    }catch(e){
+      toast('Non sono riuscito a salvare la spesa. Controlla la connessione e riprova.', true);
+    }
   }
 
   // ---- Itinerario ----
@@ -461,11 +489,113 @@
     const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
     return (await r.json()).current_weather;
   }
+
+  async function getPrevisionePerData(lat, lon, dataISO){
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&start_date=${dataISO}&end_date=${dataISO}`);
+    const json = await r.json();
+    if(!json.daily || !json.daily.time || json.daily.time.length === 0) return null;
+    return { weathercode: json.daily.weathercode[0], tmax: json.daily.temperature_2m_max[0], tmin: json.daily.temperature_2m_min[0] };
+  }
+
+  // Calcola la data reale del giorno (data partenza + numero giorno - 1) e decide quale meteo mostrare:
+  // - se il giorno cade oggi: meteo in tempo reale
+  // - se cade entro i prossimi 15 giorni: previsione specifica per quella data (limite dell'API gratuita)
+  // - altrimenti: nessun dato ancora disponibile, messaggio onesto invece di mostrare il meteo di oggi spacciato per quello del giorno
+  async function caricaMeteoGiorno(g, boxSelector){
+    const span = document.querySelector(boxSelector + ' span');
+    if(!trip.data_partenza){
+      span.textContent = 'Imposta la data di partenza per vedere le previsioni';
+      return;
+    }
+    const dataGiorno = new Date(trip.data_partenza);
+    dataGiorno.setDate(dataGiorno.getDate() + (g.numero - 1));
+    const oggi = new Date();
+    oggi.setHours(0,0,0,0);
+    dataGiorno.setHours(0,0,0,0);
+    const diffGiorni = Math.round((dataGiorno - oggi) / 86400000);
+
+    try{
+      if(diffGiorni === 0){
+        const m = await getMeteoAttuale(g.lat, g.lon);
+        span.innerHTML = descriviMeteo(m.weathercode) + ' — <span class="temp">' + Math.round(m.temperature) + '°C</span> ora, vento ' + Math.round(m.windspeed) + ' km/h';
+      } else if(diffGiorni > 0 && diffGiorni <= 15){
+        const dataISO = dataGiorno.toISOString().slice(0,10);
+        const p = await getPrevisionePerData(g.lat, g.lon, dataISO);
+        if(p){
+          span.innerHTML = 'Previsione per il ' + dataGiorno.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}) + ': ' + descriviMeteo(p.weathercode) + ' — <span class="temp">' + Math.round(p.tmin) + '° / ' + Math.round(p.tmax) + '°C</span>';
+        } else {
+          span.textContent = 'Previsione non ancora disponibile per questa data';
+        }
+      } else if(diffGiorni < 0){
+        span.textContent = 'Giorno già trascorso';
+      } else {
+        span.textContent = 'Previsione disponibile a partire da circa 15 giorni prima (' + dataGiorno.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}) + ')';
+      }
+    }catch(e){
+      span.textContent = 'Meteo non disponibile al momento';
+    }
+  }
   function linkMaps(nome){ return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(nome); }
 
   function stampaItinerario(){
     document.querySelectorAll('.day').forEach(d => d.classList.add('open'));
     setTimeout(() => window.print(), 200);
+  }
+
+  async function esportaPDF(){
+    try{
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const marginLeft = 15;
+      let y = 20;
+
+      doc.setFontSize(18);
+      doc.text(trip.nome, marginLeft, y);
+      y += 10;
+      doc.setFontSize(10);
+      doc.setTextColor(120);
+      doc.text('Generato da FlorinGo', marginLeft, y);
+      y += 12;
+      doc.setTextColor(0);
+
+      const { data: days } = await sb.from('app_days').select('*').eq('trip_id', trip.id).order('numero');
+
+      for(const g of (days || [])){
+        if(y > 265){ doc.addPage(); y = 20; }
+        doc.setFontSize(13);
+        doc.setFont(undefined, 'bold');
+        doc.text('Giorno ' + g.numero + ' — ' + (g.titolo || ''), marginLeft, y);
+        y += 6;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        if(g.sottotitolo){
+          doc.setTextColor(100);
+          doc.text(g.sottotitolo, marginLeft, y);
+          doc.setTextColor(0);
+          y += 6;
+        }
+        if(g.storia){
+          const righe = doc.splitTextToSize(g.storia, 180);
+          doc.text(righe, marginLeft, y);
+          y += righe.length * 5 + 3;
+        }
+
+        const { data: stops } = await sb.from('app_stops').select('*').eq('day_id', g.id).order('ordine');
+        (stops || []).forEach(s => {
+          if(y > 270){ doc.addPage(); y = 20; }
+          const riga = (s.orario ? s.orario + ' — ' : '') + s.nome_tappa + (s.note ? ' (' + s.note + ')' : '');
+          const righe = doc.splitTextToSize('• ' + riga, 175);
+          doc.text(righe, marginLeft + 3, y);
+          y += righe.length * 5;
+        });
+        y += 8;
+      }
+
+      doc.save('itinerario-' + trip.slug + '.pdf');
+      toast('PDF scaricato.');
+    }catch(e){
+      toast('Non sono riuscito a generare il PDF. Riprova.', true);
+    }
   }
 
   // ---- Sondaggi ----
@@ -564,12 +694,7 @@
         day.querySelector('.day-head').addEventListener('click', async function(){
           if(day.classList.contains('open') && !loaded){
             loaded = true;
-            try{
-              const m = await getMeteoAttuale(g.lat, g.lon);
-              document.querySelector('#w-'+g.id+' span').innerHTML = descriviMeteo(m.weathercode) + ' — <span class="temp">' + Math.round(m.temperature) + '°C</span>, vento ' + Math.round(m.windspeed) + ' km/h';
-            }catch(e){
-              document.querySelector('#w-'+g.id+' span').textContent = 'Meteo non disponibile';
-            }
+            await caricaMeteoGiorno(g, '#w-'+g.id);
           }
         });
       }
@@ -577,5 +702,7 @@
     if(container.firstChild) container.firstChild.classList.add('open');
   }
 </script>
+<div id="toast"></div>
+
 </body>
 </html>

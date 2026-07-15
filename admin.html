@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — FlorinGo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --night:#0d0d0d; --night-2:#161616; --ice:#ffffff; --ice-dim:rgba(255,255,255,0.6);
+    --accent-1:#f5711a; --accent-2:#ff9a4d; --line:rgba(255,255,255,0.12); --danger:#e8544f;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--night); color:var(--ice); font-family:'Space Grotesk',sans-serif; min-height:100vh; }
+  .hidden{ display:none !important; }
+  #gate{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card{ width:100%; max-width:400px; background:var(--night-2); border:1px solid var(--line); border-radius:16px; padding:30px; }
+  input{ width:100%; background:var(--night); border:1px solid var(--line); border-radius:8px; padding:12px; color:var(--ice); margin-bottom:10px; outline:none; font-family:'Space Grotesk',sans-serif; }
+  input:focus{ border-color:var(--accent-2); }
+  button{ padding:11px 18px; border:none; border-radius:8px; background:linear-gradient(90deg,var(--accent-1),var(--accent-2)); color:var(--night); font-weight:700; cursor:pointer; font-family:'Space Grotesk',sans-serif; }
+  button.secondary{ background:none; border:1px solid var(--line); color:var(--ice); }
+  button.danger{ background:none; border:1px solid var(--danger); color:var(--danger); padding:6px 12px; font-size:12px; }
+  .msg{ font-size:13px; color:var(--danger); margin-top:8px; }
+
+  #app{ max-width:1000px; margin:0 auto; padding:28px 20px 80px; }
+  .top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:10px; }
+  h1{ font-size:22px; }
+  .stats{ display:flex; gap:14px; margin-bottom:24px; flex-wrap:wrap; }
+  .stat{ background:var(--night-2); border:1px solid var(--line); border-radius:12px; padding:16px 20px; min-width:140px; }
+  .stat .n{ font-family:'JetBrains Mono',monospace; font-size:24px; color:var(--accent-1); }
+  .stat .l{ font-size:11px; color:var(--ice-dim); text-transform:uppercase; letter-spacing:0.06em; margin-top:4px; }
+
+  table{ width:100%; border-collapse:collapse; background:var(--night-2); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; color:var(--ice-dim); padding:12px 14px; border-bottom:1px solid var(--line); font-family:'JetBrains Mono',monospace; }
+  td{ padding:12px 14px; border-bottom:1px solid var(--line); font-size:13.5px; vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  td input{ margin:0; padding:6px 8px; font-size:12px; width:120px; }
+  .badge{ font-size:10px; padding:3px 8px; border-radius:100px; background:rgba(245,113,26,0.15); color:var(--accent-1); }
+  .row-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+  .row-actions a{ color:var(--accent-2); font-size:12px; text-decoration:none; }
+  #toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--night-2); border:1px solid var(--line); border-radius:10px; padding:12px 20px; font-size:13px; display:none; z-index:999; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="card">
+    <h1 style="margin-bottom:16px;">Pannello Admin</h1>
+    <input type="password" id="adminPass" placeholder="Password amministratore">
+    <button onclick="loginAdmin()" style="width:100%;">Entra</button>
+    <div class="msg" id="gateMsg"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="top">
+    <h1>Tutti i viaggi</h1>
+    <div style="display:flex; gap:10px;">
+      <button class="secondary" onclick="scaricaBackup()">⬇ Backup completo (JSON)</button>
+    </div>
+  </div>
+
+  <div class="stats" id="statsRow"></div>
+
+  <table>
+    <thead>
+      <tr><th>Nome viaggio</th><th>Organizzatore</th><th>Slug</th><th>Password editor</th><th>Partecipanti</th><th>Creato il</th><th>Link</th><th></th></tr>
+    </thead>
+    <tbody id="tripsTable"></tbody>
+  </table>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const sb = window.supabase.createClient(
+    'https://wymbqhzszfxcehaptlet.supabase.co',
+    'sb_publishable_6FkOsPv4J_sLheV7Oxviow_X3CX6CwN'
+  );
+
+  function toast(msg, isError){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.borderColor = isError ? 'var(--danger)' : 'var(--line)';
+    t.style.display = 'block';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => t.style.display = 'none', 3500);
+  }
+
+  async function loginAdmin(){
+    const pass = document.getElementById('adminPass').value;
+    const msg = document.getElementById('gateMsg');
+    try{
+      const { data, error } = await sb.from('app_admin').select('*').limit(1).maybeSingle();
+      if(error) throw error;
+      if(!data){
+        msg.textContent = 'Nessuna password admin configurata. Vai su Supabase -> Table Editor -> app_admin -> Insert row.';
+        return;
+      }
+      if(data.password !== pass){
+        msg.textContent = 'Password errata.';
+        return;
+      }
+      document.getElementById('gate').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      caricaViaggi();
+    }catch(e){
+      msg.textContent = 'Errore di connessione al database: ' + e.message;
+    }
+  }
+  document.getElementById('adminPass').addEventListener('keydown', e => { if(e.key === 'Enter') loginAdmin(); });
+
+  async function caricaViaggi(){
+    try{
+      const { data: trips, error } = await sb.from('app_trips').select('*').order('created_at', { ascending: false });
+      if(error) throw error;
+
+      const reali = trips.filter(t => !t.is_template);
+      const template = trips.filter(t => t.is_template);
+      document.getElementById('statsRow').innerHTML =
+        '<div class="stat"><div class="n">' + reali.length + '</div><div class="l">Viaggi creati</div></div>' +
+        '<div class="stat"><div class="n">' + template.length + '</div><div class="l">Template</div></div>';
+
+      const tbody = document.getElementById('tripsTable');
+      tbody.innerHTML = '';
+
+      for(const t of trips){
+        const { count } = await sb.from('app_participants').select('*', { count: 'exact', head: true }).eq('trip_id', t.id);
+        const tr = document.createElement('tr');
+        const dataCreazione = new Date(t.created_at).toLocaleDateString('it-IT');
+        tr.innerHTML =
+          '<td>' + t.nome + (t.is_template ? ' <span class="badge">template</span>' : '') + '</td>' +
+          '<td>' + (t.organizer_name || '—') + '</td>' +
+          '<td style="font-family:monospace;font-size:11px;color:var(--ice-dim);">' + t.slug + '</td>' +
+          '<td><input type="text" value="' + (t.editor_password||'') + '" data-pass-id="' + t.id + '"></td>' +
+          '<td>' + (count ?? 0) + '</td>' +
+          '<td>' + dataCreazione + '</td>' +
+          '<td class="row-actions"><a href="viaggio.html?t=' + t.slug + '" target="_blank">pubblico</a> · <a href="editor.html?t=' + t.slug + '" target="_blank">editor</a></td>' +
+          '<td><button class="danger" data-del="' + t.id + '">Elimina</button></td>';
+        tbody.appendChild(tr);
+
+        tr.querySelector('[data-pass-id]').addEventListener('change', async function(){
+          try{
+            const { error: upErr } = await sb.from('app_trips').update({ editor_password: this.value }).eq('id', t.id);
+            if(upErr) throw upErr;
+            toast('Password aggiornata per "' + t.nome + '"');
+          }catch(e){
+            toast('Errore salvataggio password: ' + e.message, true);
+          }
+        });
+
+        tr.querySelector('[data-del]').addEventListener('click', async function(){
+          if(!confirm('Eliminare definitivamente "' + t.nome + '" e tutti i suoi dati? Azione irreversibile.')) return;
+          try{
+            const { error: delErr } = await sb.from('app_trips').delete().eq('id', t.id);
+            if(delErr) throw delErr;
+            toast('Viaggio eliminato.');
+            caricaViaggi();
+          }catch(e){
+            toast('Errore eliminazione: ' + e.message, true);
+          }
+        });
+      }
+    }catch(e){
+      toast('Errore nel caricamento dei viaggi: ' + e.message, true);
+    }
+  }
+
+  async function scaricaBackup(){
+    toast('Preparazione backup in corso…');
+    try{
+      const backup = {};
+      const tabelle = ['app_trips','app_participants','app_days','app_stops','app_checklist','app_notes','app_expenses','app_polls','app_poll_votes'];
+      for(const tabella of tabelle){
+        const { data, error } = await sb.from(tabella).select('*');
+        if(error) throw error;
+        backup[tabella] = data;
+      }
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'floringo-backup-' + new Date().toISOString().slice(0,10) + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Backup scaricato correttamente.');
+    }catch(e){
+      toast('Errore durante il backup: ' + e.message, true);
+    }
+  }
+</script>
+</body>
+</html>

@@ -173,31 +173,42 @@
 
   async function login(){
     const pass = document.getElementById('passInput').value;
-    const { data, error } = await sb.from('app_trips').select('*').eq('slug', slug).single();
-    if(error || !data){
-      document.getElementById('gateMsg').textContent = 'Viaggio non trovato.';
-      return;
-    }
-    if(data.editor_password !== pass){
-      document.getElementById('gateMsg').textContent = 'Password errata.';
-      return;
-    }
-    currentTrip = data;
-    document.getElementById('gate').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    document.getElementById('tripTitle').textContent = data.nome;
-    const link = window.location.origin + '/floringo-app/viaggio/' + data.slug;
-    document.getElementById('publicLink').textContent = link;
-    document.getElementById('publicLink').href = link;
-    caricaPartecipanti();
-    caricaGiorni();
-    caricaSondaggi();
+    const btn = document.querySelector('button[onclick="login()"]');
+    const gateMsg = document.getElementById('gateMsg');
+    if(btn){ btn.disabled = true; btn.textContent = 'Accesso in corso…'; }
+    gateMsg.textContent = '';
 
-    document.getElementById('brandName').value = data.brand_name || 'FlorinGo';
-    document.getElementById('logoUrl').value = data.logo_url || '';
-    document.getElementById('colorPrimary').value = data.color_primary || '#f5711a';
-    document.getElementById('colorSecondary').value = data.color_secondary || '#ff9a4d';
-    document.getElementById('accessPass').value = data.access_password || '';
+    try{
+      const { data, error } = await sb.from('app_trips').select('*').eq('slug', slug).single();
+      if(error || !data){
+        gateMsg.textContent = 'Viaggio non trovato. Controlla il link.';
+        return;
+      }
+      if(data.editor_password !== pass){
+        gateMsg.textContent = 'Password errata.';
+        return;
+      }
+      currentTrip = data;
+      document.getElementById('gate').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      document.getElementById('tripTitle').textContent = data.nome;
+      const link = window.location.origin + '/floringo-app/viaggio/' + data.slug;
+      document.getElementById('publicLink').textContent = link;
+      document.getElementById('publicLink').href = link;
+      caricaPartecipanti();
+      caricaGiorni();
+      caricaSondaggi();
+
+      document.getElementById('brandName').value = data.brand_name || 'FlorinGo';
+      document.getElementById('logoUrl').value = data.logo_url || '';
+      document.getElementById('colorPrimary').value = data.color_primary || '#f5711a';
+      document.getElementById('colorSecondary').value = data.color_secondary || '#ff9a4d';
+      document.getElementById('accessPass').value = data.access_password || '';
+    }catch(e){
+      gateMsg.textContent = 'Impossibile contattare il server. Controlla la connessione a internet.';
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = 'Entra'; }
+    }
   }
 
   async function salvaAccessPassword(){

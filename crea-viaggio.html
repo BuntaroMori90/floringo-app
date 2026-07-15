@@ -36,6 +36,8 @@
   .msg.err{ color:var(--ember); }
   .msg.ok{ color:var(--accent-1); }
   .hint{ font-size:11px; color:var(--ice-dim); margin-top:6px; }
+  #toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--night-2); border:1px solid var(--line); border-radius:10px; padding:12px 20px; font-size:13px; display:none; z-index:999; max-width:90vw; }
+  button:disabled{ opacity:0.5; cursor:not-allowed; }
 </style>
 </head>
 <body>
@@ -79,6 +81,7 @@
   <div class="msg" id="msg"></div>
 </div>
 </div>
+<div id="toast"></div>
 
 <script>
   const sb = window.supabase.createClient(
@@ -116,6 +119,24 @@
   }
   document.querySelectorAll('.tpl-option')[0].addEventListener('click', function(){ selezionaTemplate(this); });
 
+  function toast(msg, isError){
+    const t = document.getElementById('toast');
+    if(!t) return;
+    t.textContent = msg;
+    t.style.borderColor = isError ? '#e8544f' : 'var(--line)';
+    t.style.display = 'block';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => t.style.display = 'none', 4000);
+  }
+
+  function messaggioErroreLeggibile(error){
+    if(!error) return 'Si è verificato un problema imprevisto. Riprova.';
+    if(error.message && error.message.includes('Failed to fetch')) return 'Impossibile contattare il server. Controlla la connessione a internet.';
+    if(error.message && error.message.includes('duplicate')) return 'Esiste già un viaggio con questo nome. Provane uno diverso.';
+    if(error.code === 'PGRST205') return 'Il database non è ancora configurato correttamente. Contatta l\'amministratore.';
+    return 'Errore: ' + error.message;
+  }
+
   async function creaViaggio(){
     const nome = document.getElementById('tripName').value.trim();
     const organizerName = document.getElementById('organizerName').value.trim();
@@ -124,6 +145,7 @@
     const accessPass = document.getElementById('accessPass').value.trim() || null;
     const tplId = document.querySelector('input[name="tpl"]:checked').value;
     const msg = document.getElementById('msg');
+    const btn = document.querySelector('button[onclick="creaViaggio()"]');
 
     if(!nome || !organizerName || !pass){
       msg.className = 'msg err';
@@ -131,30 +153,39 @@
       return;
     }
 
+    if(btn){ btn.disabled = true; btn.textContent = 'Creazione in corso…'; }
+    msg.textContent = '';
+
     const slug = slugify(nome);
 
-    const { data: trip, error } = await sb.from('app_trips')
-      .insert({ slug, nome, organizer_name: organizerName, data_partenza: data, editor_password: pass, access_password: accessPass, is_template: false })
-      .select().single();
+    try{
+      const { data: trip, error } = await sb.from('app_trips')
+        .insert({ slug, nome, organizer_name: organizerName, data_partenza: data, editor_password: pass, access_password: accessPass, is_template: false })
+        .select().single();
 
-    if(error){
+      if(error) throw error;
+
+      const { error: partErr } = await sb.from('app_participants').insert({ trip_id: trip.id, nome: organizerName });
+      if(partErr) toast('Viaggio creato, ma non sono riuscito ad aggiungerti come partecipante. Potrai farlo dall\'editor.', true);
+
+      if(tplId){
+        try{
+          await clonaTemplate(tplId, trip.id);
+        }catch(tplErr){
+          toast('Viaggio creato, ma la copia del template non è riuscita del tutto. Verifica l\'itinerario nell\'editor.', true);
+        }
+      }
+
+      msg.className = 'msg ok';
+      msg.textContent = 'Viaggio creato! Ti reindirizzo all\'editor...';
+      setTimeout(() => {
+        window.location.href = 'editor.html?t=' + slug;
+      }, 1200);
+    }catch(error){
+      if(btn){ btn.disabled = false; btn.textContent = 'Crea viaggio'; }
       msg.className = 'msg err';
-      msg.textContent = 'Errore nella creazione: ' + error.message;
-      return;
+      msg.textContent = messaggioErroreLeggibile(error);
     }
-
-    // L'organizzatore è automaticamente il primo partecipante del gruppo
-    await sb.from('app_participants').insert({ trip_id: trip.id, nome: organizerName });
-
-    if(tplId){
-      await clonaTemplate(tplId, trip.id);
-    }
-
-    msg.className = 'msg ok';
-    msg.textContent = 'Viaggio creato! Ti reindirizzo all\'editor...';
-    setTimeout(() => {
-      window.location.href = 'editor.html?t=' + slug;
-    }, 1200);
   }
 
   async function clonaTemplate(templateTripId, nuovoTripId){

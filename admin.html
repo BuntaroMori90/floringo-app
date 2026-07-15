@@ -65,7 +65,7 @@
 
   <table>
     <thead>
-      <tr><th>Nome viaggio</th><th>Organizzatore</th><th>Slug</th><th>Password editor</th><th>Partecipanti</th><th>Creato il</th><th>Link</th><th></th></tr>
+      <tr><th>Nome viaggio</th><th>Organizzatore</th><th>Slug</th><th>Password editor</th><th>Password gruppo</th><th>Partecipanti</th><th>Creato il</th><th>Link</th><th></th></tr>
     </thead>
     <tbody id="tripsTable"></tbody>
   </table>
@@ -134,19 +134,57 @@
           '<td>' + (t.organizer_name || '—') + '</td>' +
           '<td style="font-family:monospace;font-size:11px;color:var(--ice-dim);">' + t.slug + '</td>' +
           '<td><input type="text" value="' + (t.editor_password||'') + '" data-pass-id="' + t.id + '"></td>' +
-          '<td>' + (count ?? 0) + '</td>' +
+          '<td><input type="text" value="' + (t.access_password||'') + '" placeholder="nessuna" data-accesspass-id="' + t.id + '"></td>' +
+          '<td><a href="#" style="color:var(--accent-2);font-size:12px;text-decoration:none;" data-toggle-part="' + t.id + '">' + (count ?? 0) + ' — vedi</a></td>' +
           '<td>' + dataCreazione + '</td>' +
           '<td class="row-actions"><a href="viaggio.html?t=' + t.slug + '" target="_blank">pubblico</a> · <a href="editor.html?t=' + t.slug + '" target="_blank">editor</a></td>' +
           '<td><button class="danger" data-del="' + t.id + '">Elimina</button></td>';
         tbody.appendChild(tr);
 
+        const trPart = document.createElement('tr');
+        trPart.className = 'hidden';
+        trPart.dataset.partRow = t.id;
+        trPart.innerHTML = '<td colspan="9" style="background:var(--night); font-size:12.5px; color:var(--ice-dim);" id="part-list-' + t.id + '"></td>';
+        tbody.appendChild(trPart);
+
+        tr.querySelector('[data-toggle-part]').addEventListener('click', async function(e){
+          e.preventDefault();
+          const riga = trPart;
+          const isHidden = riga.classList.contains('hidden');
+          if(isHidden){
+            const cell = document.getElementById('part-list-' + t.id);
+            cell.textContent = 'Caricamento…';
+            riga.classList.remove('hidden');
+            try{
+              const { data: parts, error } = await sb.from('app_participants').select('nome').eq('trip_id', t.id).order('nome');
+              if(error) throw error;
+              cell.textContent = (parts && parts.length) ? parts.map(p => p.nome).join(', ') : 'Nessun partecipante ancora.';
+            }catch(err){
+              cell.textContent = 'Errore nel caricamento partecipanti: ' + err.message;
+            }
+          } else {
+            riga.classList.add('hidden');
+          }
+        });
+
         tr.querySelector('[data-pass-id]').addEventListener('change', async function(){
           try{
             const { error: upErr } = await sb.from('app_trips').update({ editor_password: this.value }).eq('id', t.id);
             if(upErr) throw upErr;
-            toast('Password aggiornata per "' + t.nome + '"');
+            toast('Password editor aggiornata per "' + t.nome + '"');
           }catch(e){
             toast('Errore salvataggio password: ' + e.message, true);
+          }
+        });
+
+        tr.querySelector('[data-accesspass-id]').addEventListener('change', async function(){
+          try{
+            const valore = this.value.trim() || null;
+            const { error: upErr } = await sb.from('app_trips').update({ access_password: valore }).eq('id', t.id);
+            if(upErr) throw upErr;
+            toast('Password gruppo aggiornata per "' + t.nome + '"' + (valore ? '' : ' (rimossa, accesso libero)'));
+          }catch(e){
+            toast('Errore salvataggio password gruppo: ' + e.message, true);
           }
         });
 
